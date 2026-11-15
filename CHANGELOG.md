@@ -23,6 +23,9 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 
 ### Notes
 - Version numbers skip 1.63 at the product owner's request.
+- Docs: the 50-row screen limit is now recorded as a deliberate design limitation in CLAUDE.md,
+  the README and the PRD. It applies to every on-screen report, including Try an example; CSV
+  export is the only way to get every row. No app change.
 
 ## v1.62 — 2026-11-15
 

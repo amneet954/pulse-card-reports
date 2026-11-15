@@ -73,8 +73,9 @@ Rules:
    are merged.
    - **Sortable columns:** a sort icon on every header toggles ascending / descending (natural sort
      for years and set codes; blanks last).
-   - **50-row screen limit:** the table shows up to 50 rows with a note to export the full report
-     as CSV.
+   - **50-row screen limit (deliberate design limitation):** any report shown in the UI, including
+     Try an example, displays at most 50 rows, with a note to export the full report as CSV. The
+     CSV export is the only way to get every row. Do not raise or remove this limit.
 8. Results in **under 2 seconds**, usable on a tablet.
 9. **View results on screen and export to CSV** (same columns and sort order as the screen; CSV has every row).
 
