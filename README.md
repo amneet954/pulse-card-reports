@@ -34,14 +34,13 @@ search.
 | --- | --- |
 | Cover the early era | 1,398 Monster (including Fusion and Ritual), Spell and Trap cards from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
 | English TCG products | English-language TCG printings only (North American, European/Australian English and EN codes) |
-| One search, cards or box sets | A single search box with a Card / Box set toggle; one report can mix both |
-| Type-ahead suggestions | Results narrow as you type; "red eyes" finds Red-Eyes Black Dragon |
+| Related data model | Cards and box sets are separate tables joined by printings (`data/catalog.json`) |
+| Metrics sidebar | Pick columns from two groups: **Card** (name, type, attribute, description, rarity, set code) and **Box set** (name, set code, year) |
+| One search, cards or box sets | A single search box with a Card / Box set toggle and type-ahead ("red eyes" finds Red-Eyes Black Dragon) |
 | Search several at once | Add up to 20 cards and box sets, or paste a list |
-| Filter card results by rarity and set | Optional, behind "+ Add filter". Rarities fill in from the chosen cards; sets have type-ahead, shown as "Magician's Force (MFC)" |
-| Release date per printing | Tells a 2002 printing from a 2023 reprint |
-| Box set view with description, rarity and set number | Every covered card in the set |
+| One report table | Each row is a printing reduced to the chosen metrics; duplicate rows merge |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
-| View on screen and export to CSV | Export CSV and Copy CSV buttons |
+| View on screen and export to CSV | Export CSV and Copy CSV, with the same columns as the screen |
 
 ## What it deliberately doesn't do (Won't have, this time)
 
@@ -54,7 +53,7 @@ full MoSCoW list and `CHANGELOG.md` for what changed in each version.
 
 Card data comes from the free [YGOPRODeck API](https://ygoprodeck.com/api-guide/). A GitHub Actions
 workflow (`.github/workflows/refresh-data.yml`) runs `scripts/build-data.mjs` every Monday and
-commits `data/cards.json` when anything changed, so new reprints appear automatically. The app
+commits `data/catalog.json` when anything changed, so new reprints appear automatically. The app
 reads that file instead of calling the API on every search. YGOPRODeck's optional TCGplayer data
 mode was rejected because YGOPRODeck can't guarantee its set names and rarities.
 

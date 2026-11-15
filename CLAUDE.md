@@ -34,11 +34,12 @@ history while the customer waits.
 
 Card data comes from the **YGOPRODeck API v7** (free, no key), but the app does NOT call the API
 at runtime. `scripts/build-data.mjs` (run weekly by `.github/workflows/refresh-data.yml`) pulls
-`cardsets.php` and `cardinfo.php` once and writes `data/cards.json`:
+`cardsets.php` and `cardinfo.php` once and writes `data/catalog.json` (schema v2) as **three related
+tables**:
 
-- `scope`: the 11 booster sets and the era end date (Ancient Sanctuary's release)
-- `sets`: `{ set_name, set_code, date, in_scope, booster }` for every set a covered card appears in
-- `cards`: `{ id, name, type, desc, printings: [{ set_name, set_code, rarity, date }] }`, printings oldest first
+- `cards`: `{ id, name, card_type (Monster|Spell|Trap), subtype, attribute (null for Spell/Trap), desc }`
+- `sets`: `{ id, set_name, set_code (e.g. MFC), date, in_scope, booster }`
+- `printings`: `{ card_id, set_id, code (e.g. MFC-000), rarity }` — joins a card to a box set
 
 **v1 data scope:** every Monster (including Fusion and Ritual), Spell and Trap card printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
 LOD, PGD, MFC, DCR, IOC, AST) or in any side product released on or before AST's date, with all of
@@ -58,19 +59,19 @@ Rules:
 1. **Data coverage:** the v1 data scope above (early-era Monster, Fusion, Ritual, Spell and Trap cards, every printing to date).
 2. **English-language TCG products only**, from the era of the first 11 booster sets and the side
    products released in that period.
-3. **One search box** with a **Card / Box set toggle**; one report can include both.
-4. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
-   ("red eyes" finds "Red-Eyes Black Dragon").
-5. Search **several cards or box sets at once** (up to 20; pasting a list works).
-6. **Optional filters** behind "+ Add filter", for card results:
-   - **Rarity:** options fill in automatically with every rarity the selected cards were printed in
-     (multi-select; none selected = all rarities).
-   - **Set name or code:** type-ahead suggestions shown as "Magician's Force (MFC)", limited to the
-     sets the selected cards appear in (multi-select).
-7. **Card report:** each card with every printing — set code, box set, rarity, release date.
-8. **Box set report:** each box set with every covered card — set code, card, rarity, description.
-9. Results in **under 2 seconds**, usable on a tablet.
-10. **View results on screen and export to CSV.**
+3. **Related data model:** cards and box sets are separate tables joined by printings, so a card
+   search finds every box set it's in and a box set search finds every card in it.
+4. **Metrics sidebar** with two groups; ticked metrics become the report's columns:
+   - **Card:** Card name, Card type (Monster/Spell/Trap), Attribute, Card description, Card rarity,
+     Card set code (the printing, e.g. MFC-000)
+   - **Box set:** Box name, Box set code (e.g. MFC), Year
+5. **One search box** with a **Card / Box set toggle** and **type-ahead suggestions** that ignore
+   punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). No filters in the search.
+6. Search **several cards or box sets at once** (up to 20; pasting a list works).
+7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
+   are merged.
+8. Results in **under 2 seconds**, usable on a tablet.
+9. **View results on screen and export to CSV** (same columns as the screen).
 
 ## Should have
 - Full, up-to-date catalog: every set and every card, including cards first released in later
@@ -99,7 +100,7 @@ Rules:
 - Static site with no backend and no build step, hosted on **GitHub Pages** from the `main` branch
   root (Settings → Pages → Deploy from a branch → `main` / root).
 - Plain HTML/CSS/JavaScript — keep it simple for a non-engineer owner.
-- A small built-in sample dataset (`sample-data.js`) keeps the app demoable if `data/cards.json`
+- A small built-in sample dataset (`sample-data.js`) keeps the app demoable if `data/catalog.json`
   can't load (e.g. opened from disk); the UI shows a banner when sample data is in use.
 - `README.md` is written for interviewers: what the product is, who it's for, and how the Must haves
   map to features.
@@ -107,8 +108,8 @@ Rules:
 ## Code layout
 - `index.html` — page structure
 - `styles.css` — styles (tablet-first, 44px touch targets)
-- `app.js` — matching, reports, CSV export, UI. The pure logic is exported for Node tests.
-- `data/cards.json`, `data/meta.json` — generated card data (do not edit by hand)
+- `app.js` — data model, matching, metrics (`METRICS`), reports, CSV export, UI. The pure logic is exported for Node tests.
+- `data/catalog.json`, `data/meta.json` — generated card data (do not edit by hand)
 - `scripts/build-data.mjs` — builds the data from YGOPRODeck
 - `sample-data.js` — fallback data (3 real cards; not complete)
 - `CHANGELOG.md` — release history

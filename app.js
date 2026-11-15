@@ -1,10 +1,18 @@
-// Pulse Card Reports v1.4 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.5 — see CLAUDE.md for scope and CHANGELOG.md for history.
+//
+// Data model (data/catalog.json, schema v2) works like three related tables:
+//   cards     — one row per card
+//   sets      — one row per box set
+//   printings — one row per card printed in a set; joins cards to sets
+// A report is a list of printings (from the searched cards and box sets), projected onto the
+// metrics picked in the sidebar, with duplicate rows removed.
 (function () {
   "use strict";
 
-  const VERSION = "1.4";
+  const VERSION = "1.5";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
+  const MAX_ROWS_SHOWN = 1000; // CSV export always includes every row
 
   // ---------- Text matching ----------
 
@@ -28,40 +36,46 @@
     return null;
   }
 
-  // ---------- Data index ----------
+  // ---------- Data model ----------
 
   function buildIndex(data) {
     const cards = data.cards.map((c) => Object.assign({ key: norm(c.name) }, c));
     const sets = data.sets.map((s) => Object.assign({ key: norm(s.set_name), codeKey: norm(s.set_code) }, s));
-    const printingsBySet = new Map();
-    for (const c of cards) {
-      for (const p of c.printings) {
-        if (!printingsBySet.has(p.set_name)) printingsBySet.set(p.set_name, []);
-        printingsBySet.get(p.set_name).push({ name: c.name, desc: c.desc, set_code: p.set_code, rarity: p.rarity });
-      }
+    const cardById = new Map(cards.map((c) => [c.id, c]));
+    const setById = new Map(sets.map((s) => [s.id, s]));
+    const byCard = new Map();
+    const bySet = new Map();
+    const printings = [];
+    for (const p of data.printings) {
+      const card = cardById.get(p.card_id);
+      const set = setById.get(p.set_id);
+      if (!card || !set) continue;
+      const row = { card, set, code: p.code, rarity: p.rarity };
+      printings.push(row);
+      if (!byCard.has(card.id)) byCard.set(card.id, []);
+      byCard.get(card.id).push(row);
+      if (!bySet.has(set.id)) bySet.set(set.id, []);
+      bySet.get(set.id).push(row);
     }
-    return { cards, sets, printingsBySet, scope: data.scope || null };
+    return { cards, sets, cardById, setById, printings, byCard, bySet, scope: data.scope || null };
   }
 
-  // within: optional Set of set names to limit box set suggestions to.
-  function suggest(index, kind, text, limit, within) {
+  function suggest(index, kind, text, limit) {
     const q = norm(text);
     if (!q) return [];
     const out = [];
     if (kind === "card") {
       for (const c of index.cards) {
         const s = score(q, c.key);
-        if (s !== null) out.push({ s, len: c.name.length, item: { kind: "card", name: c.name, id: c.id, type: c.type } });
+        if (s !== null) out.push({ s, len: c.name.length, item: { kind: "card", id: c.id, name: c.name, type: c.card_type } });
       }
     } else {
       for (const set of index.sets) {
-        if (within && !within.has(set.set_name)) continue;
-        const sc = set.codeKey === q ? 0 : set.codeKey.startsWith(q) ? 1 : null;
+        const sc = set.codeKey === q ? 0 : set.codeKey && set.codeKey.startsWith(q) ? 1 : null;
         const sn = score(q, set.key);
         const s = sc !== null && (sn === null || sc <= sn) ? sc : sn;
         if (s !== null) {
-          out.push({ s, len: set.set_name.length, item: {
-            kind: "set", name: set.set_name, set_code: set.set_code, date: set.date, in_scope: set.in_scope } });
+          out.push({ s, len: set.set_name.length, item: { kind: "set", id: set.id, name: set.set_name, set_code: set.set_code, date: set.date } });
         }
       }
     }
@@ -71,45 +85,62 @@
 
   // Best single match for typed or pasted text, or a "missing" item.
   function resolve(index, kind, text) {
-    const best = suggest(index, kind, text, 1)[0];
-    return best || { kind, name: text.trim(), missing: true };
+    return suggest(index, kind, text, 1)[0] || { kind, name: text.trim(), missing: true };
   }
 
   function splitList(text) {
     return String(text).split(/[\r\n,;]+/).map((s) => s.trim()).filter(Boolean);
   }
 
-  // ---------- Reports ----------
+  // ---------- Metrics ----------
 
-  function cardRows(index, items) {
-    return items.map((it) => {
-      if (it.missing) return { kind: "card", term: it.name, missing: true };
-      const c = index.cards.find((x) => x.name === it.name);
-      return { kind: "card", name: c.name, desc: c.desc, type: c.type, printings: c.printings };
-    });
+  const year = (d) => (d ? String(d).slice(0, 4) : "");
+  const titleCase = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : "");
+
+  const METRICS = [
+    { key: "card_name", group: "Card", label: "Card name", get: (p) => p.card.name },
+    { key: "card_type", group: "Card", label: "Card type", get: (p) => p.card.card_type },
+    { key: "attribute", group: "Card", label: "Attribute", get: (p) => titleCase(p.card.attribute) || "—" },
+    { key: "card_desc", group: "Card", label: "Card description", get: (p) => p.card.desc || "", long: true },
+    { key: "rarity", group: "Card", label: "Card rarity", get: (p) => p.rarity || "" },
+    { key: "print_code", group: "Card", label: "Card set code", get: (p) => p.code || "", mono: true },
+    { key: "box_name", group: "Box set", label: "Box name", get: (p) => p.set.set_name },
+    { key: "box_code", group: "Box set", label: "Box set code", get: (p) => p.set.set_code || "", mono: true },
+    { key: "box_year", group: "Box set", label: "Year", get: (p) => year(p.set.date) || "—" },
+  ];
+  const DEFAULT_METRICS = ["card_name", "card_type", "rarity", "print_code", "box_name", "box_year"];
+
+  // Printings for the searched cards and box sets, oldest first within each card.
+  function collectPrintings(index, items) {
+    const seen = new Set();
+    const out = [];
+    const add = (p) => { if (!seen.has(p)) { seen.add(p); out.push(p); } };
+    for (const it of items) {
+      if (it.missing) continue;
+      const list = it.kind === "card" ? index.byCard.get(it.id) : index.bySet.get(it.id);
+      (list || []).forEach(add);
+    }
+    return out.sort((a, b) =>
+      a.card.name.localeCompare(b.card.name) ||
+      (a.set.date || "9999").localeCompare(b.set.date || "9999") ||
+      a.code.localeCompare(b.code, undefined, { numeric: true }) ||
+      a.rarity.localeCompare(b.rarity));
   }
 
-  function setRows(index, items) {
-    return items.map((it) => {
-      if (it.missing) return { kind: "set", term: it.name, missing: true };
-      const set = index.sets.find((s) => s.set_name === it.name);
-      const list = (index.printingsBySet.get(set.set_name) || []).slice()
-        .sort((a, b) => a.set_code.localeCompare(b.set_code, undefined, { numeric: true }) || a.name.localeCompare(b.name));
-      return { kind: "set", name: set.set_name, set_code: set.set_code, date: set.date, in_scope: set.in_scope, items: list };
-    });
-  }
-
-  // rarities: array of rarity names; sets: array of set names. Empty = no filter.
-  function applyFilters(rows, rarities, sets) {
-    const rs = new Set(rarities || []);
-    const ss = new Set(sets || []);
-    if (!rs.size && !ss.size) return rows;
-    return rows.map((r) => {
-      if (r.missing || r.kind !== "card") return r;
-      const printings = r.printings.filter((p) =>
-        (!rs.size || rs.has(p.rarity)) && (!ss.size || ss.has(p.set_name)));
-      return Object.assign({}, r, { printings, total: r.printings.length, filteredOut: printings.length === 0 });
-    });
+  // Project printings onto the chosen metrics and drop duplicate rows.
+  function buildReport(index, items, metricKeys) {
+    const columns = METRICS.filter((m) => metricKeys.includes(m.key));
+    const printings = collectPrintings(index, items);
+    const seen = new Set();
+    const rows = [];
+    for (const p of printings) {
+      const values = columns.map((m) => m.get(p));
+      const k = values.join("\u0001");
+      if (seen.has(k)) continue;
+      seen.add(k);
+      rows.push(values);
+    }
+    return { columns, rows, printings: printings.length, missing: items.filter((i) => i.missing) };
   }
 
   // ---------- CSV ----------
@@ -119,56 +150,34 @@
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
-  function toCSV(rows) {
-    const out = [["search_type", "search", "card_name", "box_set", "set_code", "rarity", "release_date", "description"]];
-    for (const r of rows) {
-      const type = r.kind === "card" ? "card" : "box set";
-      if (r.missing) { out.push([type, r.term, "NO MATCH", "", "", "", "", ""]); continue; }
-      if (r.kind === "card") {
-        for (const p of r.printings) out.push([type, r.name, r.name, p.set_name, p.set_code, p.rarity, p.date || "", r.desc]);
-      } else {
-        for (const it of r.items) out.push([type, r.name, it.name, r.name, it.set_code, it.rarity, r.date || "", it.desc]);
-      }
-    }
-    return out.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  function toCSV(report) {
+    return [report.columns.map((c) => c.label)].concat(report.rows)
+      .map((row) => row.map(csvCell).join(",")).join("\r\n");
   }
 
-  // Older sample format -> current data format.
+  // Sample fallback (old nested format) -> schema v2.
   function sampleToData(sample) {
-    const dates = {};
-    return {
-      sets: sample.sets.map((s) => ({ set_name: s.set_name, set_code: s.set_code, date: s.date || null, in_scope: true })),
-      cards: sample.cards.map((c) => ({
-        name: c.name, desc: c.desc, type: c.type || "Monster",
-        printings: c.card_sets.map((p) => ({ set_name: p.set_name, set_code: p.set_code, rarity: p.set_rarity, date: dates[p.set_name] || null })),
-      })),
-    };
+    const sets = sample.sets.map((s, id) => ({ id, set_name: s.set_name, set_code: s.set_code, date: s.date || null }));
+    const setId = new Map(sets.map((s) => [s.set_name, s.id]));
+    const cards = [];
+    const printings = [];
+    sample.cards.forEach((c, id) => {
+      cards.push({ id, name: c.name, card_type: c.card_type || "Monster", attribute: c.attribute || null, desc: c.desc });
+      c.card_sets.forEach((p) => {
+        if (setId.has(p.set_name)) printings.push({ card_id: id, set_id: setId.get(p.set_name), code: p.set_code, rarity: p.set_rarity });
+      });
+    });
+    return { cards, sets, printings };
   }
 
-  // Rarities and sets across the selected cards, for the filters.
-  function selectedCards(index, items) {
-    return items.filter((i) => i.kind === "card" && !i.missing)
-      .map((i) => index.cards.find((c) => c.name === i.name)).filter(Boolean);
-  }
-  function raritiesFor(index, items) {
-    const out = new Set();
-    selectedCards(index, items).forEach((c) => c.printings.forEach((p) => p.rarity && out.add(p.rarity)));
-    return [...out].sort();
-  }
-  function setNamesFor(index, items) {
-    const out = new Set();
-    selectedCards(index, items).forEach((c) => c.printings.forEach((p) => out.add(p.set_name)));
-    return out;
-  }
-
-  const core = { norm, score, buildIndex, suggest, resolve, splitList, cardRows, setRows, applyFilters, toCSV, sampleToData,
-    raritiesFor, setNamesFor };
+  const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
+    collectPrintings, buildReport, toCSV, sampleToData };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
 
   const $ = (id) => document.getElementById(id);
-  const state = { kind: "card", items: [], index: null, rows: [], ms: 0, active: -1, options: [] };
+  const state = { kind: "card", items: [], index: null, metrics: loadMetrics(), report: null, ms: 0, active: -1, options: [] };
 
   const PLACEHOLDER = {
     card: "Start typing a card name, e.g. red-eyes",
@@ -184,15 +193,23 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
-  const year = (d) => (d ? d.slice(0, 4) : "");
-  // "Normal Monster" -> "Monster", "Fusion Monster" stays, "Spell Card" -> "Spell".
-  const typeLabel = (t) => String(t || "").replace(/^(Normal|Effect) Monster$/, "Monster").replace(/ Card$/, "");
   const fmtTime = (ms) => (ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(2)} s`);
+
+  function loadMetrics() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("pulse.metrics") || "null");
+      if (Array.isArray(saved) && saved.length) return saved.filter((k) => METRICS.some((m) => m.key === k));
+    } catch (e) { /* storage unavailable */ }
+    return DEFAULT_METRICS.slice();
+  }
+  function saveMetrics() {
+    try { localStorage.setItem("pulse.metrics", JSON.stringify(state.metrics)); } catch (e) { /* ignore */ }
+  }
 
   async function loadIndex() {
     if (state.index) return state.index;
     try {
-      const res = await fetch("data/cards.json", { cache: "no-cache" });
+      const res = await fetch("data/catalog.json", { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       state.index = buildIndex(await res.json());
     } catch (e) {
@@ -203,6 +220,34 @@
       b.hidden = false;
     }
     return state.index;
+  }
+
+  // --- metrics sidebar ---
+  function renderMetrics() {
+    const groups = [...new Set(METRICS.map((m) => m.group))];
+    $("metric-groups").innerHTML = groups.map((g) => {
+      const ms = METRICS.filter((m) => m.group === g);
+      const allOn = ms.every((m) => state.metrics.includes(m.key));
+      return `<fieldset class="metric-group"><legend>${esc(g)}</legend>` +
+        `<button type="button" class="link small" data-group="${esc(g)}">${allOn ? "Clear" : "Select all"}</button>` +
+        ms.map((m) => `<label class="metric"><input type="checkbox" value="${m.key}"${state.metrics.includes(m.key) ? " checked" : ""}>` +
+          `<span>${esc(m.label)}</span></label>`).join("") + `</fieldset>`;
+    }).join("");
+    updateRunState();
+  }
+
+  function setMetrics(keys) {
+    // keep sidebar order
+    state.metrics = METRICS.map((m) => m.key).filter((k) => keys.includes(k));
+    saveMetrics();
+    renderMetrics();
+    if (state.report) rebuild();
+  }
+
+  function updateRunState() {
+    const none = state.metrics.length === 0;
+    $("run").disabled = none;
+    $("run").title = none ? "Pick at least one metric" : "";
   }
 
   // --- toggle ---
@@ -237,11 +282,10 @@
       return;
     }
     list.innerHTML = state.options.map((o, i) => {
-      const meta = o.kind === "set"
-        ? [o.set_code, year(o.date)].filter(Boolean).map(esc).join(" · ")
-        : esc(typeLabel(o.type));
+      const label = o.kind === "set" && o.set_code ? `${o.name} (${o.set_code})` : o.name;
+      const meta = o.kind === "set" ? year(o.date) : o.type;
       return `<li role="option" id="opt-${i}" class="${i === state.active ? "active" : ""}" aria-selected="${i === state.active}" data-i="${i}">` +
-        `<span>${esc(o.name)}</span><span class="opt-meta">${meta}</span></li>`;
+        `<span>${esc(label)}</span><span class="opt-meta">${esc(meta)}</span></li>`;
     }).join("");
     list.hidden = false;
     $("q").setAttribute("aria-expanded", "true");
@@ -250,7 +294,7 @@
 
   async function updateSuggestions() {
     const text = $("q").value;
-    if (norm(text).length < 1) { closeSuggestions(); return; }
+    if (!norm(text)) { closeSuggestions(); return; }
     const index = await loadIndex();
     state.options = suggest(index, state.kind, text);
     state.active = state.options.length ? 0 : -1;
@@ -266,14 +310,15 @@
   }
 
   function renderChips() {
-    $("chips").innerHTML = state.items.map((it, i) =>
-      `<span class="chip ${it.missing ? "missing" : ""}"><span class="chip-kind">${it.kind === "card" ? "Card" : "Set"}</span>` +
-      `${esc(it.name)}<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(it.name)}">×</button></span>`).join("");
+    $("chips").innerHTML = state.items.map((it, i) => {
+      const label = it.kind === "set" && it.set_code ? `${it.name} (${it.set_code})` : it.name;
+      return `<span class="chip ${it.missing ? "missing" : ""}"><span class="chip-kind">${it.kind === "card" ? "Card" : "Set"}</span>` +
+        `${esc(label)}<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(it.name)}">×</button></span>`;
+    }).join("");
     $("clear").hidden = state.items.length === 0;
     $("hint").textContent = state.items.length >= MAX_ITEMS
       ? `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`
       : "Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.";
-    refreshFilterOptions();
   }
 
   function choose(i) {
@@ -295,179 +340,66 @@
     return true;
   }
 
-  // --- filters ---
-  // Rarity options come from the selected cards; set suggestions come from the sets those
-  // cards were printed in (or every set when no card is selected yet).
-  state.filter = { rarities: new Set(), sets: [], setOptions: [], setActive: -1 };
-
-  function showFilters(on) {
-    $("filters").hidden = !on;
-    $("add-filter").hidden = on;
-    if (!on) {
-      state.filter.rarities.clear();
-      state.filter.sets = [];
-      $("setfilter").value = "";
-      closeSetSuggestions();
-      refreshFilterOptions();
-      if (state.rows.length) render();
-    }
-  }
-
-  function refreshFilterOptions() {
-    if (!state.index) return;
-    const available = raritiesFor(state.index, state.items);
-    for (const r of [...state.filter.rarities]) if (!available.includes(r)) state.filter.rarities.delete(r);
-    $("rarity-options").innerHTML = available.length
-      ? available.map((r) => {
-          const on = state.filter.rarities.has(r);
-          return `<button type="button" class="pill${on ? " on" : ""}" aria-pressed="${on}" data-r="${esc(r)}">${esc(r)}</button>`;
-        }).join("")
-      : `<span class="hint">Add a card to see its rarities.</span>`;
-    const allowed = setNamesFor(state.index, state.items);
-    if (allowed.size) state.filter.sets = state.filter.sets.filter((n) => allowed.has(n));
-    renderSetChips();
-  }
-
-  const setLabel = (o) => `${o.name || o.set_name}${o.set_code ? ` (${o.set_code})` : ""}`;
-
-  function renderSetChips() {
-    $("set-chips").innerHTML = state.filter.sets.map((name, i) => {
-      const set = state.index && state.index.sets.find((x) => x.set_name === name);
-      return `<span class="chip"><span class="chip-kind">Set</span>${esc(set ? setLabel(set) : name)}` +
-        `<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(name)}">×</button></span>`;
-    }).join("");
-  }
-
-  function closeSetSuggestions() {
-    $("set-suggestions").hidden = true;
-    $("setfilter").setAttribute("aria-expanded", "false");
-    state.filter.setOptions = [];
-    state.filter.setActive = -1;
-  }
-
-  function renderSetSuggestions() {
-    const list = $("set-suggestions");
-    const opts = state.filter.setOptions;
-    const q = $("setfilter").value.trim();
-    if (!opts.length) {
-      if (q) {
-        list.innerHTML = `<li class="empty">No set${state.items.some((i) => i.kind === "card") ? " for the selected cards" : ""} matches “${esc(q)}”.</li>`;
-        list.hidden = false;
-      } else closeSetSuggestions();
-      return;
-    }
-    list.innerHTML = opts.map((o, i) =>
-      `<li role="option" class="${i === state.filter.setActive ? "active" : ""}" aria-selected="${i === state.filter.setActive}" data-i="${i}">` +
-      `<span>${esc(setLabel(o))}</span><span class="opt-meta">${esc(year(o.date))}</span></li>`).join("");
-    list.hidden = false;
-    $("setfilter").setAttribute("aria-expanded", "true");
-  }
-
-  async function updateSetSuggestions() {
-    const text = $("setfilter").value;
-    if (!norm(text)) { closeSetSuggestions(); return; }
-    const index = await loadIndex();
-    const allowed = setNamesFor(index, state.items);
-    state.filter.setOptions = suggest(index, "set", text, MAX_SUGGESTIONS, allowed.size ? allowed : null)
-      .filter((o) => !state.filter.sets.includes(o.name));
-    state.filter.setActive = state.filter.setOptions.length ? 0 : -1;
-    renderSetSuggestions();
-  }
-
-  function chooseSet(i) {
-    const o = state.filter.setOptions[i];
-    if (!o) return;
-    if (!state.filter.sets.includes(o.name)) state.filter.sets.push(o.name);
-    $("setfilter").value = "";
-    closeSetSuggestions();
-    renderSetChips();
-    if (state.rows.length) render();
-  }
-
-  const visibleRows = () => applyFilters(state.rows, [...state.filter.rarities], state.filter.sets);
-
   // --- report ---
   function render() {
-    const rows = visibleRows();
-    const found = rows.filter((r) => !r.missing).length;
+    const r = state.report;
+    const n = r.rows.length;
     $("results-meta").innerHTML =
-      `${rows.length} search${rows.length === 1 ? "" : "es"} · ${found} found · ready in <strong>${fmtTime(state.ms)}</strong>`;
+      `${n.toLocaleString()} row${n === 1 ? "" : "s"} from ${r.printings.toLocaleString()} printing${r.printings === 1 ? "" : "s"} · ` +
+      `${r.columns.length} metric${r.columns.length === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>`;
 
-    const cards = rows.filter((r) => r.kind === "card");
-    const sets = rows.filter((r) => r.kind === "set");
-    let html = "";
+    const miss = $("missing");
+    miss.hidden = !r.missing.length;
+    miss.textContent = r.missing.length
+      ? `No match for: ${r.missing.map((m) => `“${m.name}”`).join(", ")}.` : "";
 
-    if (cards.length) {
-      html += `<h3>Cards</h3><div class="table-wrap"><table><thead><tr><th>Card</th><th>Printings (set code · box set · rarity · released)</th></tr></thead><tbody>` +
-        cards.map((r) => {
-          if (r.missing) return `<tr><td class="name">${esc(r.term)}</td><td class="miss">No card in the database matches this name.</td></tr>`;
-          const desc = r.desc ? `<details><summary>Description</summary><p>${esc(r.desc)}</p></details>` : "";
-          const list = r.filteredOut
-            ? `<span class="miss">No printings match the filters.</span>`
-            : `<ul class="items">${r.printings.map((p) =>
-                `<li><span class="code">${esc(p.set_code)}</span><span>${esc(p.set_name)}</span><span class="rarity">${esc(p.rarity)}</span><span class="date">${esc(year(p.date) || "—")}</span></li>`).join("")}</ul>`;
-          const total = r.total != null ? r.total : r.printings.length;
-          const count = r.total != null && r.total !== r.printings.length
-            ? `${r.printings.length} of ${total} printings match` : `${total} printing${total === 1 ? "" : "s"}`;
-          return `<tr><td class="name">${esc(r.name)}<span class="sub">${esc(typeLabel(r.type))} · ${count}</span>${desc}</td><td>${list}</td></tr>`;
-        }).join("") + `</tbody></table></div>`;
-    }
+    const shown = r.rows.slice(0, MAX_ROWS_SHOWN);
+    $("report").innerHTML =
+      `<thead><tr>${r.columns.map((c) => `<th class="${c.long ? "long" : ""}">${esc(c.label)}</th>`).join("")}</tr></thead>` +
+      `<tbody>${shown.length
+        ? shown.map((row) => `<tr>${row.map((v, i) => {
+            const c = r.columns[i];
+            return `<td class="${c.mono ? "code" : ""}${c.long ? " long" : ""}">${esc(v)}</td>`;
+          }).join("")}</tr>`).join("")
+        : `<tr><td class="miss" colspan="${r.columns.length}">No rows. Add a card or box set that's in the catalog.</td></tr>`}</tbody>`;
 
-    if (sets.length) {
-      html += `<h3>Box sets</h3><div class="table-wrap"><table><thead><tr><th>Box set</th><th>Cards (set code · card · rarity)</th></tr></thead><tbody>` +
-        sets.map((r) => {
-          if (r.missing) return `<tr><td class="name">${esc(r.term)}</td><td class="miss">No box set in the database matches this name or code.</td></tr>`;
-          const sub = [r.set_code, year(r.date), `${r.items.length} printing${r.items.length === 1 ? "" : "s"}`].filter(Boolean).map(esc).join(" · ");
-          const note = r.in_scope ? "" : `<span class="tag">Partial: lists only cards from the covered early era</span>`;
-          const list = r.items.length
-            ? `<ul class="items set">${r.items.map((it) =>
-                `<li><span class="code">${esc(it.set_code)}</span><span>${esc(it.name)}` +
-                (it.desc ? ` <details class="inline"><summary aria-label="Description">ⓘ</summary><p>${esc(it.desc)}</p></details>` : "") +
-                `</span><span class="rarity">${esc(it.rarity)}</span></li>`).join("")}</ul>`
-            : `<span class="miss">No covered cards in this set.</span>`;
-          return `<tr><td class="name">${esc(r.name)}<span class="sub">${sub}</span>${note}</td><td>${list}</td></tr>`;
-        }).join("") + `</tbody></table></div>`;
-    }
-
-    $("report").innerHTML = html;
+    const t = $("truncated");
+    t.hidden = r.rows.length <= MAX_ROWS_SHOWN;
+    t.textContent = `Showing the first ${MAX_ROWS_SHOWN.toLocaleString()} rows. Export CSV to get all ${r.rows.length.toLocaleString()}.`;
     $("results-panel").hidden = false;
+  }
+
+  function rebuild() {
+    const t0 = performance.now();
+    state.report = buildReport(state.index, state.items, state.metrics);
+    state.ms = performance.now() - t0;
+    render();
   }
 
   async function run(e) {
     if (e) e.preventDefault();
-    if (e && e.type === "submit" && document.activeElement === $("q") && state.options.length && state.active >= 0) {
-      choose(state.active);
-      return;
-    }
     await commitTyped();
     if (!state.items.length) { $("q").focus(); return; }
+    if (!state.metrics.length) return;
     const btn = $("run");
     btn.disabled = true;
     btn.textContent = "Running…";
-    const t0 = performance.now();
     try {
-      const index = await loadIndex();
-      const cards = state.items.filter((i) => i.kind === "card");
-      const sets = state.items.filter((i) => i.kind === "set");
-      state.rows = cardRows(index, cards).concat(setRows(index, sets));
-      state.ms = performance.now() - t0;
-      render();
+      await loadIndex();
+      rebuild();
       $("results-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     } finally {
-      btn.disabled = false;
       btn.textContent = "Run report";
+      updateRunState();
     }
   }
 
-  function csvName() {
-    return `pulse-report-${new Date().toISOString().slice(0, 10)}.csv`;
-  }
-
   function downloadCSV() {
-    const blob = new Blob([toCSV(visibleRows())], { type: "text/csv;charset=utf-8" });
+    if (!state.report) return;
+    const blob = new Blob([toCSV(state.report)], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = csvName();
+    a.download = `pulse-report-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -475,14 +407,31 @@
   }
 
   async function copyCSV() {
+    if (!state.report) return;
     const btn = $("copy-csv");
-    try { await navigator.clipboard.writeText(toCSV(visibleRows())); btn.textContent = "Copied"; }
+    try { await navigator.clipboard.writeText(toCSV(state.report)); btn.textContent = "Copied"; }
     catch (err) { btn.textContent = "Copy failed"; }
     setTimeout(() => (btn.textContent = "Copy CSV"), 1500);
   }
 
   // --- wiring ---
   $("version").textContent = "v" + VERSION;
+  renderMetrics();
+  $("metric-groups").addEventListener("change", (e) => {
+    if (e.target.type !== "checkbox") return;
+    const keys = new Set(state.metrics);
+    if (e.target.checked) keys.add(e.target.value); else keys.delete(e.target.value);
+    setMetrics([...keys]);
+  });
+  $("metric-groups").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-group]");
+    if (!b) return;
+    const groupKeys = METRICS.filter((m) => m.group === b.dataset.group).map((m) => m.key);
+    const allOn = groupKeys.every((k) => state.metrics.includes(k));
+    const keys = new Set(state.metrics);
+    groupKeys.forEach((k) => (allOn ? keys.delete(k) : keys.add(k)));
+    setMetrics([...keys]);
+  });
   document.querySelectorAll(".seg").forEach((b) => b.addEventListener("click", () => setKind(b.dataset.kind)));
   $("q").addEventListener("input", updateSuggestions);
   $("q").addEventListener("focus", () => { if ($("q").value) updateSuggestions(); });
@@ -516,49 +465,13 @@
     const li = e.target.closest("li[data-i]");
     if (li) { e.preventDefault(); choose(Number(li.dataset.i)); }
   });
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest("#q-combo")) closeSuggestions();
-    if (!e.target.closest("#set-combo")) closeSetSuggestions();
-  });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#q-combo")) closeSuggestions(); });
   $("chips").addEventListener("click", (e) => {
     const x = e.target.closest(".chip-x");
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
   });
   $("clear").addEventListener("click", () => {
-    state.items = []; renderChips(); $("results-panel").hidden = true; state.rows = [];
-  });
-  $("add-filter").addEventListener("click", async () => { await loadIndex(); refreshFilterOptions(); showFilters(true); });
-  $("clear-filters").addEventListener("click", () => showFilters(false));
-  $("rarity-options").addEventListener("click", (e) => {
-    const b = e.target.closest(".pill");
-    if (!b) return;
-    const r = b.dataset.r;
-    if (state.filter.rarities.has(r)) state.filter.rarities.delete(r); else state.filter.rarities.add(r);
-    refreshFilterOptions();
-    if (state.rows.length) render();
-  });
-  $("setfilter").addEventListener("input", updateSetSuggestions);
-  $("setfilter").addEventListener("focus", updateSetSuggestions);
-  $("setfilter").addEventListener("keydown", (e) => {
-    const n = state.filter.setOptions.length;
-    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && n) {
-      e.preventDefault();
-      state.filter.setActive = (state.filter.setActive + (e.key === "ArrowDown" ? 1 : -1) + n) % n;
-      renderSetSuggestions();
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (n && state.filter.setActive >= 0) chooseSet(state.filter.setActive);
-    } else if (e.key === "Escape") {
-      closeSetSuggestions();
-    }
-  });
-  $("set-suggestions").addEventListener("mousedown", (e) => {
-    const li = e.target.closest("li[data-i]");
-    if (li) { e.preventDefault(); chooseSet(Number(li.dataset.i)); }
-  });
-  $("set-chips").addEventListener("click", (e) => {
-    const x = e.target.closest(".chip-x");
-    if (x) { state.filter.sets.splice(Number(x.dataset.i), 1); renderSetChips(); if (state.rows.length) render(); }
+    state.items = []; renderChips(); $("results-panel").hidden = true; state.report = null;
   });
   $("search-form").addEventListener("submit", run);
   $("example").addEventListener("click", async () => {

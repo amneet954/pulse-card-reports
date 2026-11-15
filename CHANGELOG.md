@@ -3,6 +3,37 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.5 — 2026-11-15
+
+**Theme:** turn the app into a real reporting tool: pick your metrics, get one table.
+
+### Added
+- **Metrics sidebar (Must have).** A left-hand panel lists the metrics in two groups:
+  - **Card:** Card name, Card type (Monster / Spell / Trap), Attribute, Card description,
+    Card rarity, Card set code (the printing, e.g. MFC-000)
+  - **Box set:** Box name, Box set code (e.g. MFC), Year
+  The metrics you tick become the report's columns, in sidebar order. Changing them after a
+  report runs updates the table instantly. Your choice is remembered in the browser.
+- **Attribute.** YGOPRODeck provides it for every monster (DARK, LIGHT, EARTH, WATER, FIRE,
+  WIND); Spells and Traps show "—". Because the API provides it, it's a Must have, not a Won't.
+- **Related data model (Must have).** `data/catalog.json` now holds three linked tables, like a
+  small database: **cards** (one row per card), **box sets** (one row per set) and
+  **printings** (one row per card printed in a set, linking the two with that printing's set
+  code and rarity). Searching Dark Magician Girl follows her printings to every box set she's
+  in; searching Magician's Force follows its printings to every card in it.
+
+### Changed
+- **One report table.** Card and box set searches feed the same table instead of separate
+  sections. Each row is a printing reduced to the chosen metrics; identical rows are merged.
+  Example: Dark Magician Girl with name, type, description and rarity gives 13 rows (one per
+  rarity); add Card set code and it gives all 43 printings.
+- **CSV export** matches the on-screen columns exactly.
+- Tables show up to 1,000 rows on screen; CSV always has every row.
+
+### Removed
+- **Rarity and set filters.** The search stays bare-bones: Card / Box set toggle plus type-ahead.
+  Rarity and set are now columns you can add from the sidebar instead.
+
 ## v1.4 — 2026-11-15
 
 **Theme:** make the filters as easy as the search.

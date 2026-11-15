@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse Card Reports</title>
-  <meta name="description" content="Look up which Yu-Gi-Oh cards belong to which box sets, for many cards at once.">
+  <meta name="description" content="Build reports on which Yu-Gi-Oh cards belong to which box sets, for many cards at once.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,78 +15,69 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.4</span>
+      <span class="version" id="version">v1.5</span>
     </div>
   </header>
 
-  <main>
-    <section class="panel" aria-label="Search">
-      <form id="search-form" autocomplete="off">
-        <label for="q" class="label">Search</label>
-        <div class="searchbar">
-          <div class="toggle" role="radiogroup" aria-label="Search for">
-            <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
-            <button type="button" class="seg" role="radio" aria-checked="false" data-kind="set">Box set</button>
-          </div>
-          <div class="combo" id="q-combo">
-            <input id="q" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
-              aria-controls="suggestions" placeholder="Start typing a card name, e.g. red-eyes" spellcheck="false">
-            <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
-          </div>
-        </div>
-        <p class="hint" id="hint">Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.</p>
-
-        <div class="chips" id="chips" aria-label="Selected searches"></div>
-
-        <div class="filters-row">
-          <button type="button" class="link" id="add-filter">+ Add filter</button>
-        </div>
-        <div class="filters" id="filters" hidden>
-          <div class="field full">
-            <span class="label" id="rarity-label">Rarity</span>
-            <div class="pills" id="rarity-options" role="group" aria-labelledby="rarity-label"></div>
-            <p class="hint">Rarities come from the cards you've added. Pick none to see every rarity.</p>
-          </div>
-          <div class="field full">
-            <label for="setfilter" class="label">Set name or code</label>
-            <div class="combo" id="set-combo">
-              <input id="setfilter" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
-                aria-controls="set-suggestions" placeholder="Start typing, e.g. magician or MFC" spellcheck="false">
-              <ul id="set-suggestions" class="suggestions" role="listbox" hidden></ul>
-            </div>
-            <div class="chips" id="set-chips" aria-label="Set filters"></div>
-          </div>
-          <p class="hint full">Filters apply to card results. <button type="button" class="link" id="clear-filters">Remove filters</button></p>
-        </div>
-
-        <div class="actions">
-          <button type="submit" class="primary" id="run">Run report</button>
-          <button type="button" class="ghost" id="example">Try an example</button>
-          <button type="button" class="ghost" id="clear" hidden>Clear all</button>
-        </div>
-      </form>
-    </section>
-
-    <div id="banner" class="banner" hidden></div>
-
-    <section class="panel results" aria-live="polite" id="results-panel" hidden>
-      <div class="results-head">
-        <div>
-          <h2>Report</h2>
-          <p class="meta" id="results-meta"></p>
-        </div>
-        <div class="export">
-          <button type="button" class="ghost" id="copy-csv">Copy CSV</button>
-          <button type="button" class="primary" id="download-csv">Export CSV</button>
-        </div>
+  <div class="layout">
+    <aside class="sidebar panel" aria-labelledby="metrics-title">
+      <div class="sidebar-head">
+        <h2 id="metrics-title">Metrics</h2>
+        <p class="hint">Pick the columns for your report.</p>
       </div>
-      <div id="report"></div>
-    </section>
-  </main>
+      <div id="metric-groups"></div>
+    </aside>
+
+    <main>
+      <section class="panel" aria-label="Search">
+        <form id="search-form" autocomplete="off">
+          <label for="q" class="label">Search</label>
+          <div class="searchbar">
+            <div class="toggle" role="radiogroup" aria-label="Search for">
+              <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
+              <button type="button" class="seg" role="radio" aria-checked="false" data-kind="set">Box set</button>
+            </div>
+            <div class="combo" id="q-combo">
+              <input id="q" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                aria-controls="suggestions" placeholder="Start typing a card name, e.g. red-eyes" spellcheck="false">
+              <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+            </div>
+          </div>
+          <p class="hint" id="hint">Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.</p>
+
+          <div class="chips" id="chips" aria-label="Selected searches"></div>
+
+          <div class="actions">
+            <button type="submit" class="primary" id="run">Run report</button>
+            <button type="button" class="ghost" id="example">Try an example</button>
+            <button type="button" class="ghost" id="clear" hidden>Clear all</button>
+          </div>
+        </form>
+      </section>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <section class="panel results" aria-live="polite" id="results-panel" hidden>
+        <div class="results-head">
+          <div>
+            <h2>Report</h2>
+            <p class="meta" id="results-meta"></p>
+          </div>
+          <div class="export">
+            <button type="button" class="ghost" id="copy-csv">Copy CSV</button>
+            <button type="button" class="primary" id="download-csv">Export CSV</button>
+          </div>
+        </div>
+        <p class="miss-note" id="missing" hidden></p>
+        <div class="table-wrap"><table id="report"></table></div>
+        <p class="hint" id="truncated" hidden></p>
+      </section>
+    </main>
+  </div>
 
   <footer class="foot">
-    <p id="coverage">Coverage: English-language TCG printings of every Monster (including Fusion and Ritual), Spell and Trap card from the first 11 booster sets (Legend of Blue Eyes White Dragon to
-      Ancient Sanctuary, 2002–2004) and the side products released alongside them, with every printing to date.</p>
+    <p id="coverage">Coverage: English-language TCG printings of every Monster (including Fusion and Ritual), Spell and Trap card from the first 11 booster sets
+      (Legend of Blue Eyes White Dragon to Ancient Sanctuary, 2002–2004) and the side products released alongside them, with every printing to date.</p>
     <p>Card data from the <a href="https://ygoprodeck.com/api-guide/">YGOPRODeck API</a>, refreshed weekly.
       Pulse is a fictional company in a product management case study. Not affiliated with Konami.</p>
   </footer>
