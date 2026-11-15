@@ -1,8 +1,8 @@
-// Pulse Card Reports v1.1 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.2 — see CLAUDE.md for scope and CHANGELOG.md for history.
 (function () {
   "use strict";
 
-  const VERSION = "1.1";
+  const VERSION = "1.2";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
 
@@ -50,7 +50,7 @@
     if (kind === "card") {
       for (const c of index.cards) {
         const s = score(q, c.key);
-        if (s !== null) out.push({ s, len: c.name.length, item: { kind: "card", name: c.name, id: c.id } });
+        if (s !== null) out.push({ s, len: c.name.length, item: { kind: "card", name: c.name, id: c.id, type: c.type } });
       }
     } else {
       for (const set of index.sets) {
@@ -165,6 +165,8 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
   const year = (d) => (d ? d.slice(0, 4) : "");
+  // "Normal Monster" -> "Monster", "Fusion Monster" stays, "Spell Card" -> "Spell".
+  const typeLabel = (t) => String(t || "").replace(/^(Normal|Effect) Monster$/, "Monster").replace(/ Card$/, "");
   const fmtTime = (ms) => (ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(2)} s`);
 
   async function loadIndex() {
@@ -209,7 +211,7 @@
     if (!state.options.length) {
       const q = $("q").value.trim();
       if (q.length >= 2) {
-        list.innerHTML = `<li class="empty">No ${state.kind === "card" ? "monster" : "box set"} matches “${esc(q)}”.</li>`;
+        list.innerHTML = `<li class="empty">No ${state.kind === "card" ? "card" : "box set"} matches “${esc(q)}”.</li>`;
         list.hidden = false;
       } else closeSuggestions();
       return;
@@ -217,7 +219,7 @@
     list.innerHTML = state.options.map((o, i) => {
       const meta = o.kind === "set"
         ? [o.set_code, year(o.date)].filter(Boolean).map(esc).join(" · ")
-        : "Monster";
+        : esc(typeLabel(o.type));
       return `<li role="option" id="opt-${i}" class="${i === state.active ? "active" : ""}" aria-selected="${i === state.active}" data-i="${i}">` +
         `<span>${esc(o.name)}</span><span class="opt-meta">${meta}</span></li>`;
     }).join("");
@@ -304,7 +306,7 @@
     if (cards.length) {
       html += `<h3>Cards</h3><div class="table-wrap"><table><thead><tr><th>Card</th><th>Printings (set code · box set · rarity · released)</th></tr></thead><tbody>` +
         cards.map((r) => {
-          if (r.missing) return `<tr><td class="name">${esc(r.term)}</td><td class="miss">No monster in the database matches this name.</td></tr>`;
+          if (r.missing) return `<tr><td class="name">${esc(r.term)}</td><td class="miss">No card in the database matches this name.</td></tr>`;
           const desc = r.desc ? `<details><summary>Description</summary><p>${esc(r.desc)}</p></details>` : "";
           const list = r.filteredOut
             ? `<span class="miss">No printings match the filters.</span>`
@@ -313,22 +315,22 @@
           const total = r.total != null ? r.total : r.printings.length;
           const count = r.total != null && r.total !== r.printings.length
             ? `${r.printings.length} of ${total} printings match` : `${total} printing${total === 1 ? "" : "s"}`;
-          return `<tr><td class="name">${esc(r.name)}<span class="sub">${count}</span>${desc}</td><td>${list}</td></tr>`;
+          return `<tr><td class="name">${esc(r.name)}<span class="sub">${esc(typeLabel(r.type))} · ${count}</span>${desc}</td><td>${list}</td></tr>`;
         }).join("") + `</tbody></table></div>`;
     }
 
     if (sets.length) {
-      html += `<h3>Box sets</h3><div class="table-wrap"><table><thead><tr><th>Box set</th><th>Monsters (set code · card · rarity)</th></tr></thead><tbody>` +
+      html += `<h3>Box sets</h3><div class="table-wrap"><table><thead><tr><th>Box set</th><th>Cards (set code · card · rarity)</th></tr></thead><tbody>` +
         sets.map((r) => {
           if (r.missing) return `<tr><td class="name">${esc(r.term)}</td><td class="miss">No box set in the database matches this name or code.</td></tr>`;
           const sub = [r.set_code, year(r.date), `${r.items.length} printing${r.items.length === 1 ? "" : "s"}`].filter(Boolean).map(esc).join(" · ");
-          const note = r.in_scope ? "" : `<span class="tag">Partial: lists only covered early-era monsters</span>`;
+          const note = r.in_scope ? "" : `<span class="tag">Partial: lists only cards from the covered early era</span>`;
           const list = r.items.length
             ? `<ul class="items set">${r.items.map((it) =>
                 `<li><span class="code">${esc(it.set_code)}</span><span>${esc(it.name)}` +
                 (it.desc ? ` <details class="inline"><summary aria-label="Description">ⓘ</summary><p>${esc(it.desc)}</p></details>` : "") +
                 `</span><span class="rarity">${esc(it.rarity)}</span></li>`).join("")}</ul>`
-            : `<span class="miss">No covered monsters in this set.</span>`;
+            : `<span class="miss">No covered cards in this set.</span>`;
           return `<tr><td class="name">${esc(r.name)}<span class="sub">${sub}</span>${note}</td><td>${list}</td></tr>`;
         }).join("") + `</tbody></table></div>`;
     }

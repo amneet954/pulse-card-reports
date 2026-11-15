@@ -1,10 +1,11 @@
 // Builds data/cards.json from the YGOPRODeck API (v1 data scope).
 //
-// Scope: every MONSTER card that was printed in the first 11 TCG booster sets
+// Scope: every card (monsters including Fusion and Ritual, Spells and Traps) that was
+// printed in the first 11 TCG booster sets
 // (Legend of Blue Eyes White Dragon -> Ancient Sanctuary, Mar 2002 - Jun 2004)
 // or in any side product released up to Ancient Sanctuary's release date
-// (starter decks, tins, tournament packs, promos). For each of those monsters
-// we keep ALL of its printings to date, so 2014 or 2026 reprints show up too.
+// (starter decks, tins, tournament packs, promos). For each of those
+// cards we keep ALL of its printings to date, so 2014 or 2026 reprints show up too.
 //
 // Runs in GitHub Actions (Node 20+, which has fetch). Two API requests total.
 // Usage: node scripts/build-data.mjs
@@ -40,11 +41,12 @@ const eraEnd = boosters.map((s) => s.tcg_date).sort().at(-1);
 const scopeSets = sets.filter((s) => s.tcg_date && s.tcg_date <= eraEnd);
 const scopeNames = new Set(scopeSets.map((s) => s.set_name));
 
-// 3. Pull every card once and keep the monsters printed in a scope set.
+// 3. Pull every card once and keep the ones printed in a scope set.
+//    Skill Cards and tokens aren't sold in booster sets, so they're left out.
 const all = (await getJSON(`${API}/cardinfo.php`)).data;
 const cards = [];
 for (const c of all) {
-  if (!/Monster/i.test(c.type || "")) continue;
+  if (!/Monster|Spell|Trap/i.test(c.type || "") || /Token/i.test(c.type || "")) continue;
   const printings = c.card_sets || [];
   if (!printings.some((p) => scopeNames.has(p.set_name))) continue;
   cards.push({
@@ -64,7 +66,7 @@ for (const c of all) {
 }
 cards.sort((a, b) => a.name.localeCompare(b.name));
 
-// 4. Every set any of these monsters appears in (for box set search).
+// 4. Every set any of these cards appears in (for box set search).
 const usedSetNames = new Set(cards.flatMap((c) => c.printings.map((p) => p.set_name)));
 const outSets = sets
   .filter((s) => usedSetNames.has(s.set_name))
@@ -79,7 +81,7 @@ const outSets = sets
 
 const data = {
   scope: {
-    description: "Monsters first printed in the first 11 TCG booster sets (Legend of Blue Eyes White Dragon to Ancient Sanctuary) or in side products released by Ancient Sanctuary's date, with all of their printings to date.",
+    description: "Monsters (including Fusion and Ritual), Spells and Traps printed in the first 11 TCG booster sets (Legend of Blue Eyes White Dragon to Ancient Sanctuary) or in side products released by Ancient Sanctuary's date, with all of their printings to date.",
     boosters: boosters.map((s) => ({ set_name: s.set_name, set_code: s.set_code, date: s.tcg_date }))
       .sort((a, b) => a.date.localeCompare(b.date)),
     era_end: eraEnd,
@@ -100,9 +102,12 @@ if (previous === body) {
   await writeFile("data/meta.json", JSON.stringify({
     generated_at: new Date().toISOString(),
     source: "YGOPRODeck API v7",
-    monsters: cards.length,
+    cards: cards.length,
+    monsters: cards.filter((c) => /Monster/i.test(c.type)).length,
+    spells: cards.filter((c) => /Spell/i.test(c.type)).length,
+    traps: cards.filter((c) => /Trap/i.test(c.type)).length,
     sets: outSets.length,
     printings: cards.reduce((n, c) => n + c.printings.length, 0),
   }, null, 2) + "\n");
-  console.log(`Wrote ${cards.length} monsters across ${outSets.length} sets (era ends ${eraEnd}).`);
+  console.log(`Wrote ${cards.length} cards across ${outSets.length} sets (era ends ${eraEnd}).`);
 }
