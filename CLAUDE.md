@@ -37,12 +37,12 @@ at runtime. `scripts/build-data.mjs` (run weekly by `.github/workflows/refresh-d
 `cardsets.php` and `cardinfo.php` once and writes `data/cards.json`:
 
 - `scope`: the 11 booster sets and the era end date (Ancient Sanctuary's release)
-- `sets`: `{ set_name, set_code, date, in_scope, booster }` for every set a covered monster appears in
+- `sets`: `{ set_name, set_code, date, in_scope, booster }` for every set a covered card appears in
 - `cards`: `{ id, name, type, desc, printings: [{ set_name, set_code, rarity, date }] }`, printings oldest first
 
-**v1 data scope:** every monster printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
+**v1 data scope:** every Monster (including Fusion and Ritual), Spell and Trap card printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
 LOD, PGD, MFC, DCR, IOC, AST) or in any side product released on or before AST's date, with all of
-its printings to date.
+its printings to date. Tokens and Skill Cards are excluded.
 
 Rules:
 - Do **not** use the `tcgplayer_data` parameter: YGOPRODeck says it cannot guarantee set names and
@@ -52,28 +52,26 @@ Rules:
 
 ## Must have (version 1)
 
-1. **Data coverage:** the v1 data scope above (early-era monsters, every printing to date).
+1. **Data coverage:** the v1 data scope above (early-era Monster, Fusion, Ritual, Spell and Trap cards, every printing to date).
 2. **One search box** with a **Card / Box set toggle**; one report can include both.
 3. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
    ("red eyes" finds "Red-Eyes Black Dragon").
 4. Search **several cards or box sets at once** (up to 20; pasting a list works).
 5. **Optional filters** behind "+ Add filter": rarity and set name/code, for card results.
 6. **Card report:** each card with every printing — set code, box set, rarity, release date.
-7. **Box set report:** each box set with every covered monster — set code, card, rarity, description.
+7. **Box set report:** each box set with every covered card — set code, card, rarity, description.
 8. Results in **under 2 seconds**, usable on a tablet.
 9. **View results on screen and export to CSV.**
 
 ## Should have
-- Full, up-to-date catalog: every set and every monster, including cards first released in later
+- Full, up-to-date catalog: every set and every card, including cards first released in later
   years (e.g. 2022 or 2026)
 
 ## Could have
-- "Did you mean" suggestions for misspellings (e.g. "blak magician")
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
 
 ## Won't have (this time)
-- Spell and Trap cards (version 1 covers monsters only)
 - 1st Edition vs. Unlimited, and telling reprints apart
 - Alternate art labels, or artwork images per printing
 - How card wording changed over time

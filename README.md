@@ -32,19 +32,19 @@ search.
 
 | Requirement | In the app |
 | --- | --- |
-| Cover the early era | 852 monsters from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
+| Cover the early era | 1,398 Monster (including Fusion and Ritual), Spell and Trap cards from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
 | One search, cards or box sets | A single search box with a Card / Box set toggle; one report can mix both |
 | Type-ahead suggestions | Results narrow as you type; "red eyes" finds Red-Eyes Black Dragon |
 | Search several at once | Add up to 20 cards and box sets, or paste a list |
 | Filter card results by rarity and set | Optional, behind "+ Add filter" |
 | Release date per printing | Tells a 2002 printing from a 2023 reprint |
-| Box set view with description, rarity and set number | Every covered monster in the set |
+| Box set view with description, rarity and set number | Every covered card in the set |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
 | View on screen and export to CSV | Export CSV and Copy CSV buttons |
 
 ## What it deliberately doesn't do (Won't have, this time)
 
-Spell and Trap cards, 1st Edition vs. Unlimited, alternate art labels, per-printing artwork, wording
+1st Edition vs. Unlimited, alternate art labels, per-printing artwork, wording
 history, inventory tracking, restock locations, and pricing workflows. Each was cut for a stated
 reason, mostly data reliability or because it serves a different persona. See `CLAUDE.md` for the
 full MoSCoW list and `CHANGELOG.md` for what changed in each version.

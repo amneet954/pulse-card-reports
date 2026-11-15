@@ -3,6 +3,25 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.2 — 2026-11-15
+
+**Theme:** cover the whole card pool of the early era, not just monsters.
+
+### Added
+- **Spell and Trap cards (moved from Won't have to Must have).** The data now covers every
+  Monster, Spell and Trap card printed in the first 11 booster sets or their side products, with
+  every printing to date: 1,398 cards (852 monsters, 326 Spells, 220 Traps), 475 sets and 9,210
+  printings.
+- **Fusion monsters named in scope.** They were already included (43 of them, such as Thousand
+  Dragon and Dark Paladin); the PRD now lists them explicitly, along with Ritual monsters.
+- Each card's type (Monster, Fusion Monster, Spell, Trap...) shows in suggestions and reports.
+
+### Changed
+- Text across the app says "card" instead of "monster".
+
+### Not included
+- Tokens and Skill Cards, which aren't sold in booster sets.
+
 ## v1.1 — 2026-11-15
 
 **Theme:** make search work the way a cashier actually searches, and cover a real catalog.
@@ -31,10 +50,8 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - Box set descriptions sit behind a small ⓘ toggle, so long set lists stay easy to scan.
 
 ### Not included (kept in the PRD)
-- **Full catalog of every set and monster through today:** Should have.
-- **"Did you mean" suggestions for misspellings** like "blak magician": Could have. Type-ahead covers
-  partial names and punctuation, which handles most counter searches.
-- **Spell and Trap cards:** Won't have (this time). Version 1 covers monsters only.
+- **Full catalog of every set and card through today:** Should have.
+- **Spell and Trap cards:** Won't have at the time; moved to Must have and shipped in v1.2.
 
 ## v1.0 — 2026-11-14
 
