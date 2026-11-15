@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.64 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.65 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.64";
+  const VERSION = "1.65";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
@@ -318,6 +318,17 @@
 
   // --- toggle ---
   function setKind(kind) {
+    // Switching from Card to Box set drops the card side of the filter: card chips, the card
+    // rarity filter and the Card name metric.
+    if (kind === "set" && state.kind === "card") {
+      state.items = state.items.filter((i) => i.kind !== "card");
+      state.rarity = { op: "is", values: [] };
+      $("rarity-input").value = "";
+      $("rarity-msg").hidden = true;
+      state.kind = kind;
+      renderChips();
+      if (state.metrics.includes("card_name")) setMetrics(state.metrics.filter((k) => k !== "card_name"));
+    }
     state.kind = kind;
     document.querySelectorAll(".seg").forEach((b) => {
       const on = b.dataset.kind === kind;
@@ -418,6 +429,11 @@
     if (dup || state.items.length >= MAX_ITEMS) return;
     state.items.push(item);
     renderChips();
+    // Base metric: a card in the filter needs Card name; a box set needs Box name.
+    if (!item.missing) {
+      const base = item.kind === "card" ? "card_name" : "box_name";
+      if (!state.metrics.includes(base)) setMetrics(state.metrics.concat(base));
+    }
   }
 
   function renderChips() {

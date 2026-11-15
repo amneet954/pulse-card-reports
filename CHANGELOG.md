@@ -3,6 +3,33 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.65 — 2026-11-15
+
+**Theme:** a release that rolls up the v1.64 hotfixes and makes the filter set its own base
+metrics. Significant changes:
+
+### Added
+- **Light / dark mode** (from the v1.64 hotfixes): System / Light / Dark switch in the header,
+  default System, royal blue palette. Removable: see CLAUDE.md.
+- **Card rarity filter** (from the v1.64 hotfixes): "Card rarity is / is not" with typed,
+  case-insensitive values as chips.
+
+### Changed
+- **Try an example** (from the v1.64 hotfixes) runs the six-metric MVP report: Card name, Card
+  type, Card rarity, Card set code, Box name and Box year, for Quarter Century Stampede.
+- **The filter sets its base metric.**
+  - Adding a card to the filter ticks **Card name** if it isn't ticked, so the report always has
+    something to show for that card.
+  - Adding a box set ticks **Box name** the same way.
+  - Switching the toggle from **Card to Box set** clears the card side of the filter: card chips
+    are removed, the Card rarity filter is reset and **Card name** is unticked. Box set chips
+    stay. Other ticked metrics are left alone.
+  - As always, the report only changes on Run; these changes show the rerun warning.
+
+### Also in v1.64 hotfixes (rolled into this release)
+- Select all / Clear all for metrics; the "Filter:" line removed from the report header;
+  the 50-row screen limit documented as a deliberate design limitation.
+
 ## v1.64 — 2026-11-15
 
 **Theme:** tidy the report screen and bring back a guided example.

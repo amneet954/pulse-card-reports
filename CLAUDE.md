@@ -70,6 +70,9 @@ Rules:
 5. **Filter (optional)**: one box with a **Card / Box set toggle** and **type-ahead suggestions** that
    ignore punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). Leaving it empty runs
    the report on the whole catalog (e.g. Box set metrics alone list every box set).
+   - **Base metrics:** adding a card to the filter ticks Card name; adding a box set ticks Box
+     name. Switching the toggle from Card to Box set removes card chips, resets the Card rarity
+     filter and unticks Card name (other metrics stay).
 6. Filter by **several cards or box sets at once** (up to 20; pasting a list works).
 7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
    are merged.
@@ -87,7 +90,7 @@ Rules:
   a chip; add as many as needed (e.g. Common, Ultra Rare). "Is" keeps only those rarities; "is not"
   excludes them. Why: one card can have many rarities, and many printings within each rarity
   (Red-Eyes Black Dragon has 8 Common and 13 Ultra Rare printings), so narrowing by rarity is often
-  the fastest way to the printing a customer asked for. **Built in v1.64 (hotfix).** Typed text
+  the fastest way to the printing a customer asked for. **Built in v1.64 (hotfix), released in v1.65.** Typed text
   matches a catalog rarity exactly (any case) or by a unique prefix ("secret" → Secret Rare);
   ambiguous text lists the options. The filter applies on Run (part of the rerun warning), stays
   applied when the Box set toggle is selected (shown as a note), and Clear all resets it.
@@ -114,7 +117,7 @@ Rules:
 ## Versioning
 - Bump `VERSION` in `app.js` and add a `CHANGELOG.md` entry (what changed, why, what was left out)
   for every release. **The product owner sets version numbers:** stay on the current version
-  (v1.64) and record changes as hotfixes under it until told to move to the next one.
+  (v1.65) and record changes as hotfixes under it until told to move to the next one.
 - Commit messages explain what changed and why, in the same terms as the changelog.
 
 ## Technical constraints
