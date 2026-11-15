@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.62 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.64 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.62";
+  const VERSION = "1.64";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
@@ -106,7 +106,7 @@
     { key: "print_code", group: "Card", label: "Card set code", get: (p) => p.code || "", mono: true },
     { key: "box_name", group: "Box set", label: "Box name", get: (p) => p.set.set_name },
     { key: "box_code", group: "Box set", label: "Box set code", get: (p) => p.set.set_code || "", mono: true },
-    { key: "box_year", group: "Box set", label: "Year", get: (p) => year(p.set.date) || "—" },
+    { key: "box_year", group: "Box set", label: "Box year", get: (p) => year(p.set.date) || "—" },
   ];
   const DEFAULT_METRICS = ["card_name", "card_type", "rarity", "print_code", "box_name", "box_year"];
 
@@ -211,6 +211,10 @@
   const currentView = () => reportView(state.report, state.metrics);
   const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
+  const EXAMPLE = {
+    metrics: ["card_name", "rarity", "print_code", "box_name", "box_year"],
+    items: [{ kind: "set", text: "Quarter Century Stampede" }],
+  };
   const PLACEHOLDER = {
     card: "Start typing a card name, e.g. red-eyes",
     set: "Start typing a box set or code, e.g. Magician's Force or MFC",
@@ -336,10 +340,9 @@
       return `<span class="chip ${it.missing ? "missing" : ""}"><span class="chip-kind">${it.kind === "card" ? "Card" : "Set"}</span>` +
         `${esc(label)}<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(it.name)}">×</button></span>`;
     }).join("");
-    $("clear").hidden = state.items.length === 0;
-    $("hint").textContent = state.items.length >= MAX_ITEMS
-      ? `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`
-      : "Optional. Leave empty to report on the whole catalog, or add up to 20 cards and box sets.";
+    $("clear").hidden = state.items.length === 0 && !state.report;
+    $("hint").hidden = state.items.length < MAX_ITEMS;
+    $("hint").textContent = `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`;
     updateStale(); // the report itself only changes when it runs again
   }
 
@@ -378,10 +381,9 @@
     const r = state.report;
     const view = currentView();
     const n = view.rows.length;
-    const live = view.columns.filter((c) => !c.pending).length;
+    // Total rows the report holds (all of them go into the CSV export).
     $("results-meta").innerHTML =
-      `${n.toLocaleString()} row${n === 1 ? "" : "s"} from ${r.printings.toLocaleString()} printing${r.printings === 1 ? "" : "s"} · ` +
-      `${live} metric${live === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>` +
+      `<strong>${n.toLocaleString()} row${n === 1 ? "" : "s"}</strong>` +
       `<br>Filter: ${state.lastRun && state.lastRun.items.length
         ? state.lastRun.items.map((i) => esc(i.kind === "set" && i.set_code ? `${i.name} (${i.set_code})` : i.name)).join(", ")
         : "none (whole catalog)"}`;
@@ -431,6 +433,7 @@
     if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
     render();
     updateStale();
+    $("clear").hidden = false;
   }
 
   async function run(e) {
@@ -529,7 +532,26 @@
     const x = e.target.closest(".chip-x");
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
   });
-  $("clear").addEventListener("click", () => { state.items = []; renderChips(); });
+  // Clear all empties the filter and the report.
+  $("clear").addEventListener("click", () => {
+    state.items = [];
+    state.report = null;
+    state.lastRun = null;
+    state.sort = { key: null, dir: null };
+    $("results-panel").hidden = true;
+    $("report").innerHTML = "";
+    $("results-meta").innerHTML = "";
+    $("truncated").hidden = true;
+    renderChips();
+  });
+  // Try an example: Quarter Century Stampede with card and box metrics.
+  $("example").addEventListener("click", async () => {
+    const index = await loadIndex();
+    state.items = [];
+    EXAMPLE.items.forEach((x) => addItem(resolve(index, x.kind, x.text)));
+    setMetrics(EXAMPLE.metrics);
+    run();
+  });
   $("search-form").addEventListener("submit", run);
   $("download-csv").addEventListener("click", downloadCSV);
   $("report").addEventListener("click", (e) => {

@@ -64,7 +64,7 @@ Rules:
 4. **Metrics sidebar** with two groups; ticked metrics become the report's columns:
    - **Card:** Card name, Card type (Monster/Spell/Trap), Attribute, Card description, Card rarity,
      Card set code (the printing, e.g. MFC-000)
-   - **Box set:** Box name, Box set code (e.g. MFC), Year
+   - **Box set:** Box name, Box set code (e.g. MFC), Box year
 5. **Filter (optional)**: one box with a **Card / Box set toggle** and **type-ahead suggestions** that
    ignore punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). Leaving it empty runs
    the report on the whole catalog (e.g. Box set metrics alone list every box set).
@@ -87,7 +87,8 @@ Rules:
 - OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
-- "Try an example" button that loads a sample search, to help new users get started
+- "Try an example" button, to help new users get started (built in v1.64: ticks Card name, Card
+  rarity, Card set code, Box name and Box year, filters to Quarter Century Stampede and runs)
 
 ## Won't have (this time)
 - 1st Edition vs. Unlimited, and telling reprints apart

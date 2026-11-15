@@ -15,7 +15,7 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.62</span>
+      <span class="version" id="version">v1.64</span>
     </div>
   </header>
 
@@ -32,7 +32,7 @@
       <section class="panel" aria-label="Filter">
         <div class="stale" id="stale" role="status" hidden>Changes to the report have been selected. Please rerun the report for new reporting.</div>
         <form id="search-form" autocomplete="off">
-          <label for="q" class="label">Filter <span class="optional">(optional)</span></label>
+          <label for="q" class="label">Filter</label>
           <div class="searchbar">
             <div class="toggle" role="radiogroup" aria-label="Filter by">
               <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
@@ -44,12 +44,13 @@
               <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
             </div>
           </div>
-          <p class="hint" id="hint">Optional. Leave empty to report on the whole catalog, or add up to 20 cards and box sets.</p>
+          <p class="hint" id="hint" hidden></p>
 
           <div class="chips" id="chips" aria-label="Filter values"></div>
 
           <div class="actions">
             <button type="submit" class="primary" id="run">Run report</button>
+            <button type="button" class="ghost" id="example">Try an example</button>
             <button type="button" class="ghost" id="clear" hidden>Clear all</button>
           </div>
         </form>

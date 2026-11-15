@@ -3,6 +3,27 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.64 — 2026-11-15
+
+**Theme:** tidy the report screen and bring back a guided example.
+
+### Added
+- **Try an example (moved from Could have to built).** Next to Run report. It ticks Card name,
+  Card rarity, Card set code, Box name and Box year, filters to the box set Quarter Century
+  Stampede (RA04) and runs the report. (44 rows: the early-era cards reprinted in that set.)
+
+### Changed
+- **Row count only.** The report header shows the total number of rows, which is exactly what
+  the CSV export contains (e.g. "461 rows"). The printings count, metrics count and timer are gone.
+- **Clear all empties the report.** It clears the filter and removes the report, its row count
+  and the "Showing the first 50…" note, so nothing on screen refers to data that isn't shown.
+- **"Year" is now "Box year"** in the Metrics sidebar, the table header and the CSV.
+- **Simpler filter label.** "Filter (optional)" is now "Filter", and the hint line under it is
+  gone. A message appears only when the 20-item limit is reached.
+
+### Notes
+- Version numbers skip 1.63 at the product owner's request.
+
 ## v1.62 — 2026-11-15
 
 **Theme:** reports change only when they're run.
