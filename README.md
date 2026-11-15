@@ -33,6 +33,7 @@ search.
 | Requirement | In the app |
 | --- | --- |
 | Cover the early era | 1,398 Monster (including Fusion and Ritual), Spell and Trap cards from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
+| English TCG products | English-language TCG printings only (North American, European/Australian English and EN codes) |
 | One search, cards or box sets | A single search box with a Card / Box set toggle; one report can mix both |
 | Type-ahead suggestions | Results narrow as you type; "red eyes" finds Red-Eyes Black Dragon |
 | Search several at once | Add up to 20 cards and box sets, or paste a list |

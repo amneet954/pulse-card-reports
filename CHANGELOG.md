@@ -3,6 +3,24 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.3 — 2026-11-15
+
+**Theme:** make the language and region scope explicit.
+
+### Changed
+- **English-language TCG printings only (Must have).** Version 1 covers English TCG products
+  from the era of the first 11 booster sets and their side products: North American codes
+  (LOB-001), European and Australian English (LOB-E001, LOB-A005) and EN codes (LOB-EN001).
+  The 43 Portuguese OTS Tournament Pack printings that the source lists are now filtered out.
+  Coverage: 1,398 cards, 461 sets and 9,163 printings.
+- **Corrected why Tokens and Skill Cards are excluded.** v1.2 said they "aren't sold in booster
+  sets." The accurate reason: no English printings of either exist in the covered era. English
+  Tokens start with the Token Packs in 2008; Skill Cards belong to Speed Duel, from 2018–19.
+
+### Added to the PRD (not built)
+- **Could have:** OCG products and non-English printings.
+- **Should have note:** decide on Tokens and Skill Cards when building the full catalog.
+
 ## v1.2 — 2026-11-15
 
 **Theme:** cover the whole card pool of the early era, not just monsters.
@@ -20,7 +38,7 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - Text across the app says "card" instead of "monster".
 
 ### Not included
-- Tokens and Skill Cards, which aren't sold in booster sets.
+- Tokens and Skill Cards. (The reason given here was corrected in v1.3.)
 
 ## v1.1 — 2026-11-15
 

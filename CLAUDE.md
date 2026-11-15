@@ -42,7 +42,10 @@ at runtime. `scripts/build-data.mjs` (run weekly by `.github/workflows/refresh-d
 
 **v1 data scope:** every Monster (including Fusion and Ritual), Spell and Trap card printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
 LOD, PGD, MFC, DCR, IOC, AST) or in any side product released on or before AST's date, with all of
-its printings to date. Tokens and Skill Cards are excluded.
+its printings to date. **English-language TCG printings only** (codes like LOB-001, LOB-E001,
+LOB-A005, LOB-EN001); OCG and non-English TCG printings are excluded. Tokens and Skill Cards are
+excluded because no English printings of either exist in this era (English Tokens start in 2008;
+Skill Cards belong to Speed Duel, from 2018-19).
 
 Rules:
 - Do **not** use the `tcgplayer_data` parameter: YGOPRODeck says it cannot guarantee set names and
@@ -53,21 +56,25 @@ Rules:
 ## Must have (version 1)
 
 1. **Data coverage:** the v1 data scope above (early-era Monster, Fusion, Ritual, Spell and Trap cards, every printing to date).
-2. **One search box** with a **Card / Box set toggle**; one report can include both.
-3. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
+2. **English-language TCG products only**, from the era of the first 11 booster sets and the side
+   products released in that period.
+3. **One search box** with a **Card / Box set toggle**; one report can include both.
+4. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
    ("red eyes" finds "Red-Eyes Black Dragon").
-4. Search **several cards or box sets at once** (up to 20; pasting a list works).
-5. **Optional filters** behind "+ Add filter": rarity and set name/code, for card results.
-6. **Card report:** each card with every printing — set code, box set, rarity, release date.
-7. **Box set report:** each box set with every covered card — set code, card, rarity, description.
-8. Results in **under 2 seconds**, usable on a tablet.
-9. **View results on screen and export to CSV.**
+5. Search **several cards or box sets at once** (up to 20; pasting a list works).
+6. **Optional filters** behind "+ Add filter": rarity and set name/code, for card results.
+7. **Card report:** each card with every printing — set code, box set, rarity, release date.
+8. **Box set report:** each box set with every covered card — set code, card, rarity, description.
+9. Results in **under 2 seconds**, usable on a tablet.
+10. **View results on screen and export to CSV.**
 
 ## Should have
 - Full, up-to-date catalog: every set and every card, including cards first released in later
-  years (e.g. 2022 or 2026)
+  years (e.g. 2022 or 2026). When building it, decide whether to include Tokens (English printings
+  from 2008) and Skill Cards (Speed Duel).
 
 ## Could have
+- OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
 
