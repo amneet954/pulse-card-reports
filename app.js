@@ -92,6 +92,21 @@
     return String(text).split(/[\r\n,;]+/).map((s) => s.trim()).filter(Boolean);
   }
 
+  // Every rarity in the catalog, for the rarity filter.
+  function allRarities(index) {
+    return [...new Set(index.printings.map((p) => p.rarity).filter(Boolean))].sort();
+  }
+  // Match typed text to a catalog rarity: exact (any case), else a single prefix match.
+  function matchRarity(index, text) {
+    const q = norm(text);
+    if (!q) return null;
+    const all = allRarities(index);
+    const exact = all.find((r) => norm(r) === q);
+    if (exact) return exact;
+    const pre = all.filter((r) => norm(r).startsWith(q));
+    return pre.length === 1 ? pre[0] : null;
+  }
+
   // ---------- Metrics ----------
 
   const year = (d) => (d ? String(d).slice(0, 4) : "");
@@ -111,8 +126,9 @@
   const DEFAULT_METRICS = ["card_name", "card_type", "rarity", "print_code", "box_name", "box_year"];
 
   // Printings for the filtered cards and box sets, oldest first within each card.
-  // An empty filter means the whole catalog.
-  function collectPrintings(index, items) {
+  // An empty filter means the whole catalog. opts.rarity = { op: "is" | "not", values: [...] }
+  // keeps (is) or drops (is not) printings by rarity, case-insensitively.
+  function collectPrintings(index, items, opts) {
     const seen = new Set();
     const out = [];
     const add = (p) => { if (!seen.has(p)) { seen.add(p); out.push(p); } };
@@ -122,7 +138,14 @@
       const list = it.kind === "card" ? index.byCard.get(it.id) : index.bySet.get(it.id);
       (list || []).forEach(add);
     }
-    return out.sort((a, b) =>
+    const rf = opts && opts.rarity;
+    const filtered = rf && rf.values && rf.values.length
+      ? (() => {
+          const want = new Set(rf.values.map((v) => v.toLowerCase()));
+          return out.filter((p) => want.has(String(p.rarity).toLowerCase()) === (rf.op !== "not"));
+        })()
+      : out;
+    return filtered.sort((a, b) =>
       a.card.name.localeCompare(b.card.name) ||
       (a.set.date || "9999").localeCompare(b.set.date || "9999") ||
       a.code.localeCompare(b.code, undefined, { numeric: true }) ||
@@ -130,9 +153,9 @@
   }
 
   // Project printings onto the chosen metrics and drop duplicate rows.
-  function buildReport(index, items, metricKeys) {
+  function buildReport(index, items, metricKeys, opts) {
     const columns = METRICS.filter((m) => metricKeys.includes(m.key));
-    const printings = collectPrintings(index, items);
+    const printings = collectPrintings(index, items, opts);
     const seen = new Set();
     const rows = [];
     for (const p of printings) {
@@ -199,7 +222,7 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, reportView, sortRows, toCSV, sampleToData };
+    collectPrintings, buildReport, reportView, sortRows, toCSV, sampleToData, allRarities, matchRarity };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
@@ -207,7 +230,7 @@
   const $ = (id) => document.getElementById(id);
   // Nothing is saved between visits: a refresh starts with no metrics, no search and no report.
   const state = { kind: "card", items: [], index: null, metrics: [], report: null, ms: 0, active: -1, options: [],
-    sort: { key: null, dir: null }, lastRun: null };
+    sort: { key: null, dir: null }, lastRun: null, rarity: { op: "is", values: [] } };
   const currentView = () => reportView(state.report, state.metrics);
   const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
@@ -302,8 +325,53 @@
       b.setAttribute("aria-checked", on ? "true" : "false");
     });
     $("q").placeholder = PLACEHOLDER[kind];
+    renderRarity();
     updateSuggestions();
     $("q").focus();
+  }
+
+  // --- card rarity filter (Should have) ---
+  // "Card rarity is / is not" + typed values as chips. Shown with the Card toggle; values stay
+  // applied (and listed) when the Box set toggle is selected.
+  function renderRarity() {
+    const card = state.kind === "card";
+    const r = state.rarity;
+    $("rarity-filter").hidden = !card;
+    document.querySelectorAll(".opseg").forEach((b) => {
+      const on = b.dataset.op === r.op;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    $("rarity-chips").innerHTML = r.values.map((v, i) =>
+      `<span class="chip"><span class="chip-kind">${r.op === "not" ? "Not" : "Rarity"}</span>${esc(v)}` +
+      `<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(v)}">×</button></span>`).join("");
+    const note = $("rarity-note");
+    note.hidden = card || !r.values.length;
+    note.textContent = r.values.length
+      ? `Card rarity ${r.op === "not" ? "is not" : "is"}: ${r.values.join(", ")}` : "";
+  }
+
+  async function addRarity() {
+    const input = $("rarity-input");
+    const text = input.value.trim();
+    if (!text) return;
+    const index = await loadIndex();
+    const msg = $("rarity-msg");
+    const found = matchRarity(index, text);
+    if (!found) {
+      const q = norm(text);
+      const close = allRarities(index).filter((r) => norm(r).includes(q)).slice(0, 6);
+      msg.textContent = close.length
+        ? `“${text}” matches more than one rarity. Type one of: ${close.join(", ")}.`
+        : `No rarity called “${text}”. Try e.g. Common, Rare, Super Rare, Ultra Rare or Secret Rare.`;
+      msg.hidden = false;
+      return;
+    }
+    msg.hidden = true;
+    if (!state.rarity.values.includes(found)) state.rarity.values.push(found);
+    input.value = "";
+    renderRarity();
+    renderChips();
   }
 
   // --- suggestions ---
@@ -358,7 +426,7 @@
       return `<span class="chip ${it.missing ? "missing" : ""}"><span class="chip-kind">${it.kind === "card" ? "Card" : "Set"}</span>` +
         `${esc(label)}<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(it.name)}">×</button></span>`;
     }).join("");
-    $("clear").hidden = state.items.length === 0 && !state.report;
+    $("clear").hidden = state.items.length === 0 && !state.rarity.values.length && !state.report;
     $("hint").hidden = state.items.length < MAX_ITEMS;
     $("hint").textContent = `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`;
     updateStale(); // the report itself only changes when it runs again
@@ -386,7 +454,8 @@
   // --- stale warning ---
   // After a report runs, changing the filter or the metrics doesn't change the data shown.
   // A warning above the filter asks for a re-run instead.
-  const filterKey = () => state.items.map((i) => `${i.kind}:${i.name}`).join("|");
+  const filterKey = () => state.items.map((i) => `${i.kind}:${i.name}`).join("|") +
+    (state.rarity.values.length ? `#rarity:${state.rarity.op}:${state.rarity.values.join(",")}` : "");
   function updateStale() {
     const stale = !!state.report && !!state.lastRun &&
       (state.lastRun.filter !== filterKey() || state.lastRun.metrics !== state.metrics.join("|"));
@@ -442,7 +511,8 @@
   // columns when only the search changed, so new metrics still need a Run).
   function rebuild(keys) {
     const t0 = performance.now();
-    state.report = buildReport(state.index, state.items, keys || state.metrics);
+    state.report = buildReport(state.index, state.items, keys || state.metrics,
+      { rarity: { op: state.rarity.op, values: state.rarity.values.slice() } });
     state.ms = performance.now() - t0;
     state.lastRun = { filter: filterKey(), metrics: state.metrics.join("|"), items: state.items.slice() };
     if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
@@ -543,6 +613,8 @@
   // Clear all empties the filter and the report.
   $("clear").addEventListener("click", () => {
     state.items = [];
+    state.rarity = { op: "is", values: [] };
+    renderRarity();
     state.report = null;
     state.lastRun = null;
     state.sort = { key: null, dir: null };
@@ -556,11 +628,27 @@
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();
     state.items = [];
+    state.rarity = { op: "is", values: [] };
+    renderRarity();
     EXAMPLE.items.forEach((x) => addItem(resolve(index, x.kind, x.text)));
     setMetrics(EXAMPLE.metrics);
     run();
   });
   $("search-form").addEventListener("submit", run);
+  $("rarity-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addRarity(); }
+  });
+  $("rarity-input").addEventListener("input", () => { $("rarity-msg").hidden = true; });
+  document.querySelectorAll(".opseg").forEach((b) => b.addEventListener("click", () => {
+    state.rarity.op = b.dataset.op;
+    renderRarity();
+    renderChips();
+  }));
+  $("rarity-chips").addEventListener("click", (e) => {
+    const x = e.target.closest(".chip-x");
+    if (x) { state.rarity.values.splice(Number(x.dataset.i), 1); renderRarity(); renderChips(); }
+  });
+  renderRarity();
   $("download-csv").addEventListener("click", downloadCSV);
   $("report").addEventListener("click", (e) => {
     const b = e.target.closest("button.sort");

@@ -52,6 +52,21 @@
 
           <div class="chips" id="chips" aria-label="Filter values"></div>
 
+          <div class="rarity-filter" id="rarity-filter">
+            <span class="label" id="rarity-label">Card rarity</span>
+            <div class="rarity-row">
+              <div class="toggle" role="radiogroup" aria-labelledby="rarity-label">
+                <button type="button" class="opseg active" role="radio" aria-checked="true" data-op="is">is</button>
+                <button type="button" class="opseg" role="radio" aria-checked="false" data-op="not">is not</button>
+              </div>
+              <input id="rarity-input" type="text" autocomplete="off" spellcheck="false"
+                aria-labelledby="rarity-label" placeholder="Type a rarity, e.g. common, and press Enter">
+            </div>
+            <p class="hint warn" id="rarity-msg" role="status" hidden></p>
+            <div class="chips" id="rarity-chips" aria-label="Rarity filter values"></div>
+          </div>
+          <p class="hint" id="rarity-note" hidden></p>
+
           <div class="actions">
             <button type="submit" class="primary" id="run">Run report</button>
             <button type="button" class="ghost" id="example">Try an example</button>

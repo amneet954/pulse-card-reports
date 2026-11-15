@@ -34,6 +34,14 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Royal blue instead of purple.** Buttons, checkboxes, focus rings and highlights now use royal
   blue (#4169E1). Checkboxes are drawn by the app so they stay blue in every browser and mode.
   Notifications stay yellow.
+- **Card rarity filter (Should have, built).** Under the Filter, with the Card toggle selected:
+  "Card rarity **is** / **is not**", then type a rarity and press Enter to add it as a chip.
+  Not case-sensitive ("ULTRA rare" → Ultra Rare); a unique start also works ("secret" → Secret
+  Rare); text that fits several rarities ("ultra") lists them; unknown text gets a yellow hint.
+  Example: Red-Eyes Black Dragon with "is Common, Ultra Rare" gives 21 rows (8 + 13); "is not"
+  gives the other 19. Applies to whole-catalog reports and box set filters too. Changes trigger
+  the rerun warning; the filter stays applied when the Box set toggle is selected (shown as a
+  note); Clear all and Try an example reset it.
 - **Light / dark mode (trial).** A System / Light / Dark switch in the header, next to the version,
   defaulting to System (follows the device). In dark mode, blue text such as the row count and
   the Select all / Clear all links turns white; buttons and checkboxes stay blue. Not saved between

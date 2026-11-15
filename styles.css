@@ -80,11 +80,11 @@ main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-widt
 
 .searchbar { display: flex; gap: 10px; align-items: stretch; }
 .toggle { display: inline-flex; background: var(--bg); border-radius: 10px; padding: 4px; flex: none; }
-.seg {
+.seg, .opseg {
   border: 0; background: transparent; padding: 8px 14px; border-radius: 8px; font: inherit;
   font-weight: 600; color: var(--muted); cursor: pointer; min-height: 40px; white-space: nowrap;
 }
-.seg.active { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg.active, .opseg.active { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .combo { position: relative; flex: 1; min-width: 0; }
 .suggestions {
   position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px;
@@ -226,3 +226,9 @@ button.primary.attention { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px v
   padding: 10px 14px; font-size: 14px; font-weight: 600; margin-bottom: 14px;
 }
 .optional { font-weight: 400; color: var(--muted); }
+
+.rarity-filter { margin-top: 14px; }
+.rarity-row { display: flex; gap: 10px; align-items: stretch; }
+.rarity-row input { flex: 1; min-width: 0; }
+.hint.warn { color: var(--warn-ink); background: var(--warn-bg); border-radius: 8px; padding: 6px 10px; }
+@media (max-width: 640px) { .rarity-row { flex-direction: column; } .rarity-row .toggle { align-self: flex-start; } }

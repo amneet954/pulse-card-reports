@@ -87,7 +87,10 @@ Rules:
   a chip; add as many as needed (e.g. Common, Ultra Rare). "Is" keeps only those rarities; "is not"
   excludes them. Why: one card can have many rarities, and many printings within each rarity
   (Red-Eyes Black Dragon has 8 Common and 13 Ultra Rare printings), so narrowing by rarity is often
-  the fastest way to the printing a customer asked for.
+  the fastest way to the printing a customer asked for. **Built in v1.64 (hotfix).** Typed text
+  matches a catalog rarity exactly (any case) or by a unique prefix ("secret" → Secret Rare);
+  ambiguous text lists the options. The filter applies on Run (part of the rerun warning), stays
+  applied when the Box set toggle is selected (shown as a note), and Clear all resets it.
 - Full, up-to-date catalog: every set and every card, including cards first released in later
   years (e.g. 2022 or 2026). When building it, decide whether to include Tokens (English printings
   from 2008) and Skill Cards (Speed Duel).
