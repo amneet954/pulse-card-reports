@@ -3,6 +3,28 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.6 — 2026-11-15
+
+**Theme:** make the report table something you can work with.
+
+### Added
+- **Sortable columns (Must have).** Every column header has a sort icon (↕). Tap once for
+  ascending (▲), again for descending (▼). Years and set codes sort naturally (MFC-2 before
+  MFC-10); box names starting with numbers come first in A–Z. Blank values (like "—" for a
+  Spell's Attribute) always go last. CSV export follows the same sort order.
+- **50-row screen limit (Must have).** The on-screen table shows up to 50 rows, with a note:
+  "Showing the first 50 of N rows. To get the full report, export it as a CSV." The CSV always
+  has every row.
+
+### Changed
+- **The report stays in sync (Must have).** Once a report is showing, unticking a metric removes
+  its column right away and ticking one adds it. Adding or removing a card or box set from the
+  search updates the report too. If the sorted column is removed, the sort resets.
+
+### Why
+Staff need to scan by year, rarity or set without exporting, and a short on-screen preview keeps
+the table fast and readable on a counter tablet; the CSV is the full record.
+
 ## v1.5 — 2026-11-15
 
 **Theme:** turn the app into a real reporting tool: pick your metrics, get one table.
@@ -28,7 +50,7 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
   Example: Dark Magician Girl with name, type, description and rarity gives 13 rows (one per
   rarity); add Card set code and it gives all 43 printings.
 - **CSV export** matches the on-screen columns exactly.
-- Tables show up to 1,000 rows on screen; CSV always has every row.
+- Tables show up to 1,000 rows on screen; CSV always has every row. (Lowered to 50 in v1.6.)
 
 ### Removed
 - **Rarity and set filters.** The search stays bare-bones: Card / Box set toggle plus type-ahead.

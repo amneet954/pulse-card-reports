@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.5 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.6 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,10 +9,10 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5";
+  const VERSION = "1.6";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
-  const MAX_ROWS_SHOWN = 1000; // CSV export always includes every row
+  const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
 
   // ---------- Text matching ----------
 
@@ -143,6 +143,20 @@
     return { columns, rows, printings: printings.length, missing: items.filter((i) => i.missing) };
   }
 
+  // Sort report rows by one column. Blank or "—" values always go last; numbers and set
+  // codes sort naturally ("MFC-2" before "MFC-10", 2003 before 2016).
+  function sortRows(report, key, dir) {
+    const i = report.columns.findIndex((c) => c.key === key);
+    if (i < 0 || !dir) return report.rows;
+    const sign = dir === "desc" ? -1 : 1;
+    const empty = (v) => v === "" || v === "—" || v == null;
+    return report.rows.slice().sort((a, b) => {
+      const x = a[i], y = b[i];
+      if (empty(x) || empty(y)) return empty(x) === empty(y) ? 0 : empty(x) ? 1 : -1;
+      return sign * String(x).localeCompare(String(y), undefined, { numeric: true, sensitivity: "base" });
+    });
+  }
+
   // ---------- CSV ----------
 
   function csvCell(v) {
@@ -150,8 +164,8 @@
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
-  function toCSV(report) {
-    return [report.columns.map((c) => c.label)].concat(report.rows)
+  function toCSV(report, rows) {
+    return [report.columns.map((c) => c.label)].concat(rows || report.rows)
       .map((row) => row.map(csvCell).join(",")).join("\r\n");
   }
 
@@ -171,13 +185,15 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, toCSV, sampleToData };
+    collectPrintings, buildReport, sortRows, toCSV, sampleToData };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
 
   const $ = (id) => document.getElementById(id);
-  const state = { kind: "card", items: [], index: null, metrics: loadMetrics(), report: null, ms: 0, active: -1, options: [] };
+  const state = { kind: "card", items: [], index: null, metrics: loadMetrics(), report: null, ms: 0, active: -1, options: [],
+    sort: { key: null, dir: null } };
+  const sortedRows = () => (state.report ? sortRows(state.report, state.sort.key, state.sort.dir) : []);
 
   const PLACEHOLDER = {
     card: "Start typing a card name, e.g. red-eyes",
@@ -319,6 +335,10 @@
     $("hint").textContent = state.items.length >= MAX_ITEMS
       ? `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`
       : "Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.";
+    // Once a report is showing, keep it in step with the search.
+    if (state.report && state.index) {
+      if (state.items.length) rebuild(); else { state.report = null; $("results-panel").hidden = true; }
+    }
   }
 
   function choose(i) {
@@ -353,9 +373,14 @@
     miss.textContent = r.missing.length
       ? `No match for: ${r.missing.map((m) => `“${m.name}”`).join(", ")}.` : "";
 
-    const shown = r.rows.slice(0, MAX_ROWS_SHOWN);
+    const all = sortedRows();
+    const shown = all.slice(0, MAX_ROWS_SHOWN);
+    const icon = (k) => (state.sort.key !== k ? "↕" : state.sort.dir === "asc" ? "▲" : "▼");
+    const aria = (k) => (state.sort.key !== k ? "none" : state.sort.dir === "asc" ? "ascending" : "descending");
     $("report").innerHTML =
-      `<thead><tr>${r.columns.map((c) => `<th class="${c.long ? "long" : ""}">${esc(c.label)}</th>`).join("")}</tr></thead>` +
+      `<thead><tr>${r.columns.map((c) => `<th class="${c.long ? "long" : ""}" aria-sort="${aria(c.key)}">` +
+        `<button type="button" class="sort${state.sort.key === c.key ? " on" : ""}" data-k="${c.key}" ` +
+        `aria-label="Sort by ${esc(c.label)}">${esc(c.label)}<span class="sort-icon" aria-hidden="true">${icon(c.key)}</span></button></th>`).join("")}</tr></thead>` +
       `<tbody>${shown.length
         ? shown.map((row) => `<tr>${row.map((v, i) => {
             const c = r.columns[i];
@@ -364,8 +389,9 @@
         : `<tr><td class="miss" colspan="${r.columns.length}">No rows. Add a card or box set that's in the catalog.</td></tr>`}</tbody>`;
 
     const t = $("truncated");
-    t.hidden = r.rows.length <= MAX_ROWS_SHOWN;
-    t.textContent = `Showing the first ${MAX_ROWS_SHOWN.toLocaleString()} rows. Export CSV to get all ${r.rows.length.toLocaleString()}.`;
+    t.hidden = all.length <= MAX_ROWS_SHOWN;
+    t.innerHTML = `Showing the first ${MAX_ROWS_SHOWN} of ${all.length.toLocaleString()} rows. ` +
+      `To get the full report, <button type="button" class="link" id="export-more">export it as a CSV</button>.`;
     $("results-panel").hidden = false;
   }
 
@@ -373,6 +399,7 @@
     const t0 = performance.now();
     state.report = buildReport(state.index, state.items, state.metrics);
     state.ms = performance.now() - t0;
+    if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
     render();
   }
 
@@ -396,7 +423,7 @@
 
   function downloadCSV() {
     if (!state.report) return;
-    const blob = new Blob([toCSV(state.report)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([toCSV(state.report, sortedRows())], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `pulse-report-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -409,7 +436,7 @@
   async function copyCSV() {
     if (!state.report) return;
     const btn = $("copy-csv");
-    try { await navigator.clipboard.writeText(toCSV(state.report)); btn.textContent = "Copied"; }
+    try { await navigator.clipboard.writeText(toCSV(state.report, sortedRows())); btn.textContent = "Copied"; }
     catch (err) { btn.textContent = "Copy failed"; }
     setTimeout(() => (btn.textContent = "Copy CSV"), 1500);
   }
@@ -471,7 +498,7 @@
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
   });
   $("clear").addEventListener("click", () => {
-    state.items = []; renderChips(); $("results-panel").hidden = true; state.report = null;
+    state.report = null; state.items = []; renderChips(); $("results-panel").hidden = true;
   });
   $("search-form").addEventListener("submit", run);
   $("example").addEventListener("click", async () => {
@@ -481,6 +508,14 @@
     run();
   });
   $("download-csv").addEventListener("click", downloadCSV);
+  $("report").addEventListener("click", (e) => {
+    const b = e.target.closest("button.sort");
+    if (!b) return;
+    const k = b.dataset.k;
+    state.sort = { key: k, dir: state.sort.key === k && state.sort.dir === "asc" ? "desc" : "asc" };
+    render();
+  });
+  $("truncated").addEventListener("click", (e) => { if (e.target.id === "export-more") downloadCSV(); });
   $("copy-csv").addEventListener("click", copyCSV);
   loadIndex();
 })();

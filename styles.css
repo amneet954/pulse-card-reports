@@ -180,3 +180,15 @@ details.inline[open] p { display: block; }
   border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer;
 }
 .pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+#report th { padding: 0; }
+button.sort {
+  display: inline-flex; align-items: center; gap: 6px; width: 100%; min-height: 40px; padding: 8px 10px;
+  border: 0; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted);
+  cursor: pointer; text-align: left; white-space: nowrap;
+}
+button.sort:hover { color: var(--ink); }
+button.sort.on { color: var(--accent); }
+.sort-icon { font-size: 11px; opacity: .7; }
+button.sort.on .sort-icon { opacity: 1; }
+#truncated { margin: 10px 0 0; }

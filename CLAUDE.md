@@ -70,8 +70,14 @@ Rules:
 6. Search **several cards or box sets at once** (up to 20; pasting a list works).
 7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
    are merged.
+   - **Sortable columns:** a sort icon on every header toggles ascending / descending (natural sort
+     for years and set codes; blanks last).
+   - **50-row screen limit:** the table shows up to 50 rows with a note to export the full report
+     as CSV.
+   - **Stays in sync:** once a report is showing, changing the metrics adds or removes columns
+     immediately, and changing the search updates the rows.
 8. Results in **under 2 seconds**, usable on a tablet.
-9. **View results on screen and export to CSV** (same columns as the screen).
+9. **View results on screen and export to CSV** (same columns and sort order as the screen; CSV has every row).
 
 ## Should have
 - Full, up-to-date catalog: every set and every card, including cards first released in later
