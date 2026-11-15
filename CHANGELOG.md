@@ -26,6 +26,13 @@ metrics. Significant changes:
     stay. Other ticked metrics are left alone.
   - As always, the report only changes on Run; these changes show the rerun warning.
 
+### Hotfix (still v1.65)
+- **Switching the toggle starts fresh, both ways.** Going from Card to Box set, or from Box set
+  to Card, clears the filter (chips and the Card rarity filter), unticks every metric and clears
+  the report. Adding the first card then ticks Card name; adding the first box set ticks Box name.
+  (Replaces the narrower v1.65 rule that only removed the card side when switching to Box set.)
+  Clicking the toggle that's already selected changes nothing.
+
 ### Also in v1.64 hotfixes (rolled into this release)
 - Select all / Clear all for metrics; the "Filter:" line removed from the report header;
   the 50-row screen limit documented as a deliberate design limitation.

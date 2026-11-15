@@ -318,16 +318,14 @@
 
   // --- toggle ---
   function setKind(kind) {
-    // Switching from Card to Box set drops the card side of the filter: card chips, the card
-    // rarity filter and the Card name metric.
-    if (kind === "set" && state.kind === "card") {
-      state.items = state.items.filter((i) => i.kind !== "card");
-      state.rarity = { op: "is", values: [] };
-      $("rarity-input").value = "";
-      $("rarity-msg").hidden = true;
+    // Switching between Card and Box set starts fresh: the filter (chips and Card rarity), the
+    // ticked metrics and the report are all cleared. Adding the first card or box set then ticks
+    // its base metric (Card name / Box name).
+    if (kind !== state.kind) {
       state.kind = kind;
-      renderChips();
-      if (state.metrics.includes("card_name")) setMetrics(state.metrics.filter((k) => k !== "card_name"));
+      state.metrics = [];
+      renderMetrics();
+      resetFilterAndReport();
     }
     state.kind = kind;
     document.querySelectorAll(".seg").forEach((b) => {
@@ -339,6 +337,23 @@
     renderRarity();
     updateSuggestions();
     $("q").focus();
+  }
+
+  // Clears the filter (chips and Card rarity) and the report. Used by Clear all and the toggle.
+  function resetFilterAndReport() {
+    state.items = [];
+    state.rarity = { op: "is", values: [] };
+    $("rarity-input").value = "";
+    $("rarity-msg").hidden = true;
+    state.report = null;
+    state.lastRun = null;
+    state.sort = { key: null, dir: null };
+    $("results-panel").hidden = true;
+    $("report").innerHTML = "";
+    $("results-meta").innerHTML = "";
+    $("truncated").hidden = true;
+    renderRarity();
+    renderChips();
   }
 
   // --- card rarity filter (Should have) ---
@@ -627,19 +642,7 @@
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
   });
   // Clear all empties the filter and the report.
-  $("clear").addEventListener("click", () => {
-    state.items = [];
-    state.rarity = { op: "is", values: [] };
-    renderRarity();
-    state.report = null;
-    state.lastRun = null;
-    state.sort = { key: null, dir: null };
-    $("results-panel").hidden = true;
-    $("report").innerHTML = "";
-    $("results-meta").innerHTML = "";
-    $("truncated").hidden = true;
-    renderChips();
-  });
+  $("clear").addEventListener("click", resetFilterAndReport);
   // Try an example: the MVP report (six metrics) for Quarter Century Stampede.
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();

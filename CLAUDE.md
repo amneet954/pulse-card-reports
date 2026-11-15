@@ -70,9 +70,10 @@ Rules:
 5. **Filter (optional)**: one box with a **Card / Box set toggle** and **type-ahead suggestions** that
    ignore punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). Leaving it empty runs
    the report on the whole catalog (e.g. Box set metrics alone list every box set).
+   - **Switching the toggle starts fresh:** going from Card to Box set, or Box set to Card,
+     clears the filter (chips and Card rarity), unticks every metric and clears the report.
    - **Base metrics:** adding a card to the filter ticks Card name; adding a box set ticks Box
-     name. Switching the toggle from Card to Box set removes card chips, resets the Card rarity
-     filter and unticks Card name (other metrics stay).
+     name.
 6. Filter by **several cards or box sets at once** (up to 20; pasting a list works).
 7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
    are merged.
