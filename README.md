@@ -32,28 +32,36 @@ search.
 
 | Requirement | In the app |
 | --- | --- |
-| Search by card name, box set name or set code | Two report modes; set codes like `MFC` or `SDK` work |
-| Search several cards or sets in one query | One per line (or comma-separated), up to 20 |
-| Filter card results by rarity and set | Rarity and set filters in card mode |
-| Box set view with description, rarity and set number | Box set report lists every printing in the set |
-| Fast, usable on a tablet | No backend, cached lookups, 44px touch targets |
+| Cover the early era | 852 monsters from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
+| One search, cards or box sets | A single search box with a Card / Box set toggle; one report can mix both |
+| Type-ahead suggestions | Results narrow as you type; "red eyes" finds Red-Eyes Black Dragon |
+| Search several at once | Add up to 20 cards and box sets, or paste a list |
+| Filter card results by rarity and set | Optional, behind "+ Add filter" |
+| Release date per printing | Tells a 2002 printing from a 2023 reprint |
+| Box set view with description, rarity and set number | Every covered monster in the set |
+| Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
 | View on screen and export to CSV | Export CSV and Copy CSV buttons |
 
 ## What it deliberately doesn't do (Won't have, this time)
 
-1st Edition vs. Unlimited, alternate art labels, per-printing artwork, wording history, inventory
-tracking, restock locations, and pricing workflows. Each was cut for a stated reason, mostly data
-reliability or because it serves a different persona. See `CLAUDE.md` for the full MoSCoW list.
+Spell and Trap cards, 1st Edition vs. Unlimited, alternate art labels, per-printing artwork, wording
+history, inventory tracking, restock locations, and pricing workflows. Each was cut for a stated
+reason, mostly data reliability or because it serves a different persona. See `CLAUDE.md` for the
+full MoSCoW list and `CHANGELOG.md` for what changed in each version.
 
 ## Data
 
-Card data comes from the free [YGOPRODeck API](https://ygoprodeck.com/api-guide/). Its optional
-TCGplayer data mode was rejected because YGOPRODeck can't guarantee its set names and rarities.
-If the API is unreachable, the app falls back to a small built-in sample and says so on screen.
+Card data comes from the free [YGOPRODeck API](https://ygoprodeck.com/api-guide/). A GitHub Actions
+workflow (`.github/workflows/refresh-data.yml`) runs `scripts/build-data.mjs` every Monday and
+commits `data/cards.json` when anything changed, so new reprints appear automatically. The app
+reads that file instead of calling the API on every search. YGOPRODeck's optional TCGplayer data
+mode was rejected because YGOPRODeck can't guarantee its set names and rarities.
 
 ## Run it locally
 
-Open `index.html` in a browser. There is no build step.
+From the repository folder, run `python3 -m http.server` and open http://localhost:8000. There is
+no build step. Opening `index.html` directly shows a 3-card sample, because browsers block loading
+the data file from disk.
 
 ---
 Pulse is fictional. Not affiliated with Konami or YGOPRODeck.

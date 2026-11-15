@@ -15,23 +15,33 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
+      <span class="version" id="version">v1.1</span>
     </div>
   </header>
 
   <main>
     <section class="panel" aria-label="Search">
-      <div class="modes" role="tablist" aria-label="Report type">
-        <button class="mode active" role="tab" aria-selected="true" data-mode="card">Search by card</button>
-        <button class="mode" role="tab" aria-selected="false" data-mode="set">Search by box set</button>
-      </div>
-
       <form id="search-form" autocomplete="off">
-        <label for="terms" class="label" id="terms-label">Card names, one per line</label>
-        <textarea id="terms" rows="4" spellcheck="false"
-          placeholder="Dark Magician&#10;Blue-Eyes White Dragon"></textarea>
-        <p class="hint" id="terms-hint">Search up to 20 at once. Separate with new lines or commas.</p>
+        <label for="q" class="label">Search</label>
+        <div class="searchbar">
+          <div class="toggle" role="radiogroup" aria-label="Search for">
+            <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
+            <button type="button" class="seg" role="radio" aria-checked="false" data-kind="set">Box set</button>
+          </div>
+          <div class="combo">
+            <input id="q" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+              aria-controls="suggestions" placeholder="Start typing a card name, e.g. red-eyes" spellcheck="false">
+            <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+          </div>
+        </div>
+        <p class="hint" id="hint">Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.</p>
 
-        <div class="filters" id="card-filters">
+        <div class="chips" id="chips" aria-label="Selected searches"></div>
+
+        <div class="filters-row">
+          <button type="button" class="link" id="add-filter">+ Add filter</button>
+        </div>
+        <div class="filters" id="filters" hidden>
           <div class="field">
             <label for="rarity" class="label">Rarity</label>
             <select id="rarity"><option value="">All rarities</option></select>
@@ -40,11 +50,13 @@
             <label for="setfilter" class="label">Set name or code contains</label>
             <input id="setfilter" type="text" placeholder="e.g. Magician's Force or MFC">
           </div>
+          <p class="hint full">Filters apply to card results. <button type="button" class="link" id="clear-filters">Remove filters</button></p>
         </div>
 
         <div class="actions">
           <button type="submit" class="primary" id="run">Run report</button>
           <button type="button" class="ghost" id="example">Try an example</button>
+          <button type="button" class="ghost" id="clear" hidden>Clear all</button>
         </div>
       </form>
     </section>
@@ -54,7 +66,7 @@
     <section class="panel results" aria-live="polite" id="results-panel" hidden>
       <div class="results-head">
         <div>
-          <h2 id="results-title">Report</h2>
+          <h2>Report</h2>
           <p class="meta" id="results-meta"></p>
         </div>
         <div class="export">
@@ -62,19 +74,15 @@
           <button type="button" class="primary" id="download-csv">Export CSV</button>
         </div>
       </div>
-      <div class="table-wrap">
-        <table id="report">
-          <thead id="report-head"></thead>
-          <tbody id="report-body"></tbody>
-        </table>
-      </div>
+      <div id="report"></div>
     </section>
   </main>
 
   <footer class="foot">
-    Card data from the <a href="https://ygoprodeck.com/api-guide/">YGOPRODeck API</a>.
-    Pulse is a fictional company in a product management case study.
-    Not affiliated with Konami.
+    <p id="coverage">Coverage: monsters from the first 11 booster sets (Legend of Blue Eyes White Dragon to
+      Ancient Sanctuary, 2002–2004) and the side products released alongside them, with every printing to date.</p>
+    <p>Card data from the <a href="https://ygoprodeck.com/api-guide/">YGOPRODeck API</a>, refreshed weekly.
+      Pulse is a fictional company in a product management case study. Not affiliated with Konami.</p>
   </footer>
 
   <script src="sample-data.js"></script>

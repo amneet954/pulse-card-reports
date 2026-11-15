@@ -32,43 +32,48 @@ history while the customer waits.
 
 ## Data source
 
-Use the **YGOPRODeck API v7** (free, no key): `https://db.ygoprodeck.com/api/v7/`
+Card data comes from the **YGOPRODeck API v7** (free, no key), but the app does NOT call the API
+at runtime. `scripts/build-data.mjs` (run weekly by `.github/workflows/refresh-data.yml`) pulls
+`cardsets.php` and `cardinfo.php` once and writes `data/cards.json`:
 
-- `cardinfo.php` — card search. Useful params: `name` (exact), `fname` (fuzzy/partial), `cardset`.
-  Each card returns `name`, `desc`, `type`, `attribute`, and a `card_sets` array of
-  `{ set_name, set_code, set_rarity, set_rarity_code, set_price }`.
-- `cardsets.php` — every set, with `set_name`, `set_code` (prefix, e.g. `MFC`), `num_of_cards`, `tcg_date`.
-- `cardsetsinfo.php?setcode=MFC-000` — details of one printing.
+- `scope`: the 11 booster sets and the era end date (Ancient Sanctuary's release)
+- `sets`: `{ set_name, set_code, date, in_scope, booster }` for every set a covered monster appears in
+- `cards`: `{ id, name, type, desc, printings: [{ set_name, set_code, rarity, date }] }`, printings oldest first
+
+**v1 data scope:** every monster printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
+LOD, PGD, MFC, DCR, IOC, AST) or in any side product released on or before AST's date, with all of
+its printings to date.
 
 Rules:
 - Do **not** use the `tcgplayer_data` parameter: YGOPRODeck says it cannot guarantee set names and
   rarities with it.
 - Do **not** hotlink card images. Images are out of scope anyway.
-- Cache responses in memory and debounce searches; be polite to the free API.
-- Verify the response shapes above against the live API before relying on them, and handle errors
-  (no results returns an `error` field).
+- Keep the build to a couple of API requests; be polite to the free API.
 
 ## Must have (version 1)
 
-1. Search by **card name**, **box set name**, or **set code prefix** (e.g. `MFC`).
-2. Search **several cards or box sets in one query** (e.g. one per line, or comma-separated).
-3. **Filter card results by rarity and set.**
-4. **Search by card** report: one row per card — card name, then a list of the box sets it appears
-   in, each with set code and rarity.
-5. **Search by box set** report: one row per box set — box name, then a list of every card in it,
-   each with current description, rarity and set code (e.g. `MFC-000`).
-6. Results in **under 2 seconds**, usable on a tablet.
-7. **View results on screen and export to CSV.**
+1. **Data coverage:** the v1 data scope above (early-era monsters, every printing to date).
+2. **One search box** with a **Card / Box set toggle**; one report can include both.
+3. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
+   ("red eyes" finds "Red-Eyes Black Dragon").
+4. Search **several cards or box sets at once** (up to 20; pasting a list works).
+5. **Optional filters** behind "+ Add filter": rarity and set name/code, for card results.
+6. **Card report:** each card with every printing — set code, box set, rarity, release date.
+7. **Box set report:** each box set with every covered monster — set code, card, rarity, description.
+8. Results in **under 2 seconds**, usable on a tablet.
+9. **View results on screen and export to CSV.**
 
 ## Should have
-- Autocomplete that tells similar names apart (Dark Magician vs. Dark Magician Girl vs. Dark Magician of Chaos)
-- Release date for each set (`tcg_date`), to tell a 2002 printing from a 2023 one
+- Full, up-to-date catalog: every set and every monster, including cards first released in later
+  years (e.g. 2022 or 2026)
 
 ## Could have
+- "Did you mean" suggestions for misspellings (e.g. "blak magician")
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
 
 ## Won't have (this time)
+- Spell and Trap cards (version 1 covers monsters only)
 - 1st Edition vs. Unlimited, and telling reprints apart
 - Alternate art labels, or artwork images per printing
 - How card wording changed over time
@@ -76,17 +81,25 @@ Rules:
 - Restock locations
 - Buying, selling or pricing workflows
 
+## Versioning
+- Bump `VERSION` in `app.js` and add a `CHANGELOG.md` entry (what changed, why, what was left out)
+  for every release.
+- Commit messages explain what changed and why, in the same terms as the changelog.
+
 ## Technical constraints
 - Static site with no backend and no build step, hosted on **GitHub Pages** from the `main` branch
   root (Settings → Pages → Deploy from a branch → `main` / root).
 - Plain HTML/CSS/JavaScript — keep it simple for a non-engineer owner.
-- A small built-in sample dataset (`sample-data.js`) keeps the app demoable if the API is
-  unreachable; the UI shows a banner when sample data is in use.
+- A small built-in sample dataset (`sample-data.js`) keeps the app demoable if `data/cards.json`
+  can't load (e.g. opened from disk); the UI shows a banner when sample data is in use.
 - `README.md` is written for interviewers: what the product is, who it's for, and how the Must haves
   map to features.
 
 ## Code layout
 - `index.html` — page structure
 - `styles.css` — styles (tablet-first, 44px touch targets)
-- `app.js` — data sources, report logic, CSV export, UI. The pure logic is exported for Node tests.
-- `sample-data.js` — offline fallback data (a few real printings; not complete)
+- `app.js` — matching, reports, CSV export, UI. The pure logic is exported for Node tests.
+- `data/cards.json`, `data/meta.json` — generated card data (do not edit by hand)
+- `scripts/build-data.mjs` — builds the data from YGOPRODeck
+- `sample-data.js` — fallback data (3 real cards; not complete)
+- `CHANGELOG.md` — release history
