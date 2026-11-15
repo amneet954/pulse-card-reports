@@ -508,7 +508,6 @@
     miss.textContent = r.missing.length
       ? `No match for: ${r.missing.map((m) => `“${m.name}”`).join(", ")}.` : "";
 
-    $("pending").hidden = !view.pending;
 
     const all = sortedRows(view);
     const shown = all.slice(0, MAX_ROWS_SHOWN);

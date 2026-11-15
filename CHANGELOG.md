@@ -33,6 +33,10 @@ metrics. Significant changes:
   (Replaces the narrower v1.65 rule that only removed the card side when switching to Box set.)
   Clicking the toggle that's already selected changes nothing.
 
+- **One notification instead of two.** The yellow warning above the filter now reads "Changes to
+  the report have been conducted. Please rerun the reporting again." The second note inside the
+  report panel (about "--" columns) is removed; new columns still show "--" until the re-run.
+
 ### Also in v1.64 hotfixes (rolled into this release)
 - Select all / Clear all for metrics; the "Filter:" line removed from the report header;
   the 50-row screen limit documented as a deliberate design limitation.
