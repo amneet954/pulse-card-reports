@@ -1,8 +1,8 @@
-// Pulse Card Reports v1.2 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.3 — see CLAUDE.md for scope and CHANGELOG.md for history.
 (function () {
   "use strict";
 
-  const VERSION = "1.2";
+  const VERSION = "1.3";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
 

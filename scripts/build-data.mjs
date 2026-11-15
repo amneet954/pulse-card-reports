@@ -7,6 +7,10 @@
 // (starter decks, tins, tournament packs, promos). For each of those
 // cards we keep ALL of its printings to date, so 2014 or 2026 reprints show up too.
 //
+// Language: English-language TCG printings only (North American codes like LOB-001,
+// European/Australian English like LOB-E001 / LOB-A001, and EN codes like LOB-EN001).
+// OCG and non-English TCG printings (e.g. Portuguese OTS packs) are left out.
+//
 // Runs in GitHub Actions (Node 20+, which has fetch). Two API requests total.
 // Usage: node scripts/build-data.mjs
 
@@ -15,6 +19,13 @@ import { writeFile, mkdir, readFile } from "node:fs/promises";
 const API = "https://db.ygoprodeck.com/api/v7";
 const BOOSTER_CODES = ["LOB", "MRD", "SRL", "PSV", "LON", "LOD", "PGD", "MFC", "DCR", "IOC", "AST"];
 const FIRST_ERA_END = "2005-01-01"; // boosters must be original prints, not later reissues
+
+// Region letters after the hyphen in a set code: "" (NA), "E"/"A" (EU/AU English), "EN..." (English).
+function isEnglishTCG(setCode) {
+  const m = /^[^-]+-([A-Z]*)/.exec(String(setCode || "").toUpperCase());
+  if (!m) return true;
+  return m[1] === "" || m[1] === "E" || m[1] === "A" || m[1].startsWith("EN");
+}
 
 async function getJSON(url) {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -42,12 +53,13 @@ const scopeSets = sets.filter((s) => s.tcg_date && s.tcg_date <= eraEnd);
 const scopeNames = new Set(scopeSets.map((s) => s.set_name));
 
 // 3. Pull every card once and keep the ones printed in a scope set.
-//    Skill Cards and tokens aren't sold in booster sets, so they're left out.
+//    Tokens and Skill Cards are left out: no English printings of either exist in this era
+//    (English Tokens start in 2008; Skill Cards belong to Speed Duel, from 2018-19).
 const all = (await getJSON(`${API}/cardinfo.php`)).data;
 const cards = [];
 for (const c of all) {
   if (!/Monster|Spell|Trap/i.test(c.type || "") || /Token/i.test(c.type || "")) continue;
-  const printings = c.card_sets || [];
+  const printings = (c.card_sets || []).filter((p) => isEnglishTCG(p.set_code));
   if (!printings.some((p) => scopeNames.has(p.set_name))) continue;
   cards.push({
     id: c.id,
@@ -81,7 +93,7 @@ const outSets = sets
 
 const data = {
   scope: {
-    description: "Monsters (including Fusion and Ritual), Spells and Traps printed in the first 11 TCG booster sets (Legend of Blue Eyes White Dragon to Ancient Sanctuary) or in side products released by Ancient Sanctuary's date, with all of their printings to date.",
+    description: "English-language TCG printings of Monsters (including Fusion and Ritual), Spells and Traps printed in the first 11 TCG booster sets (Legend of Blue Eyes White Dragon to Ancient Sanctuary) or in side products released by Ancient Sanctuary's date, with all of their printings to date.",
     boosters: boosters.map((s) => ({ set_name: s.set_name, set_code: s.set_code, date: s.tcg_date }))
       .sort((a, b) => a.date.localeCompare(b.date)),
     era_end: eraEnd,
