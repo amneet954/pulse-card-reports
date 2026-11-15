@@ -192,3 +192,8 @@ button.sort.on { color: var(--accent); }
 .sort-icon { font-size: 11px; opacity: .7; }
 button.sort.on .sort-icon { opacity: 1; }
 #truncated { margin: 10px 0 0; }
+
+.pending-note { color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: 14px; margin: 12px 0 0; }
+#report td.pending-cell { color: var(--muted); text-align: center; }
+.sort.pending { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--muted); font-style: italic; white-space: nowrap; }
+button.primary.attention { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px var(--accent); }

@@ -3,6 +3,22 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.61 — 2026-11-15
+
+**Theme:** make the baseline report behave like a real reporting tool.
+
+### Changed
+- **New metrics need a re-run.** If you tick a metric after a report has run, its column appears
+  with "--" in every cell, and a note asks you to run the report again. The Run button is
+  highlighted until you do. Unticking a metric still removes its column straight away. Changing
+  the search refreshes rows only for the metrics that were already run.
+- **Nothing is saved between visits.** A page refresh starts blank: no metrics ticked, no search
+  and no report. (v1.5 remembered the ticked metrics in the browser; that's removed.) The Run
+  button stays disabled until at least one metric is ticked.
+
+### Removed
+- **Try an example**, to keep the focus on the baseline report. Moved to the PRD as a Could have.
+
 ## v1.6 — 2026-11-15
 
 **Theme:** make the report table something you can work with.

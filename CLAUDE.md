@@ -88,6 +88,7 @@ Rules:
 - OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
+- "Try an example" button that loads a sample search, to help new users get started
 
 ## Won't have (this time)
 - 1st Edition vs. Unlimited, and telling reprints apart

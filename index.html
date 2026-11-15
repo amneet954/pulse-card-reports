@@ -15,7 +15,7 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.6</span>
+      <span class="version" id="version">v1.61</span>
     </div>
   </header>
 
@@ -23,9 +23,9 @@
     <aside class="sidebar panel" aria-labelledby="metrics-title">
       <div class="sidebar-head">
         <h2 id="metrics-title">Metrics</h2>
-        <p class="hint">Pick the columns for your report.</p>
+        <p class="hint" id="metrics-hint">Pick at least one metric to run a report.</p>
       </div>
-      <div id="metric-groups"></div>
+      <form id="metric-groups" autocomplete="off"></form>
     </aside>
 
     <main>
@@ -49,7 +49,6 @@
 
           <div class="actions">
             <button type="submit" class="primary" id="run">Run report</button>
-            <button type="button" class="ghost" id="example">Try an example</button>
             <button type="button" class="ghost" id="clear" hidden>Clear all</button>
           </div>
         </form>
@@ -69,6 +68,7 @@
           </div>
         </div>
         <p class="miss-note" id="missing" hidden></p>
+        <p class="pending-note" id="pending" hidden>Columns showing “--” were added after this report ran. Run the report again to fill them in.</p>
         <div class="table-wrap"><table id="report"></table></div>
         <p class="hint" id="truncated" hidden></p>
       </section>

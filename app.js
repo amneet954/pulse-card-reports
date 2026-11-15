@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.6 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.61 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.6";
+  const VERSION = "1.61";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
@@ -143,13 +143,25 @@
     return { columns, rows, printings: printings.length, missing: items.filter((i) => i.missing) };
   }
 
+  // What the screen shows: the metrics ticked now. A metric ticked after the report ran has no
+  // data yet, so its cells show "--" until the report is run again.
+  const PENDING = "--";
+  function reportView(report, metricKeys) {
+    const columns = METRICS.filter((m) => metricKeys.includes(m.key)).map((m) => {
+      const src = report.columns.findIndex((c) => c.key === m.key);
+      return Object.assign({}, m, { src, pending: src < 0 });
+    });
+    const rows = report.rows.map((r) => columns.map((c) => (c.pending ? PENDING : r[c.src])));
+    return { columns, rows, pending: columns.some((c) => c.pending) };
+  }
+
   // Sort report rows by one column. Blank or "—" values always go last; numbers and set
   // codes sort naturally ("MFC-2" before "MFC-10", 2003 before 2016).
   function sortRows(report, key, dir) {
     const i = report.columns.findIndex((c) => c.key === key);
     if (i < 0 || !dir) return report.rows;
     const sign = dir === "desc" ? -1 : 1;
-    const empty = (v) => v === "" || v === "—" || v == null;
+    const empty = (v) => v === "" || v === "—" || v === PENDING || v == null;
     return report.rows.slice().sort((a, b) => {
       const x = a[i], y = b[i];
       if (empty(x) || empty(y)) return empty(x) === empty(y) ? 0 : empty(x) ? 1 : -1;
@@ -185,25 +197,22 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, sortRows, toCSV, sampleToData };
+    collectPrintings, buildReport, reportView, sortRows, toCSV, sampleToData };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
 
   const $ = (id) => document.getElementById(id);
-  const state = { kind: "card", items: [], index: null, metrics: loadMetrics(), report: null, ms: 0, active: -1, options: [],
+  // Nothing is saved between visits: a refresh starts with no metrics, no search and no report.
+  const state = { kind: "card", items: [], index: null, metrics: [], report: null, ms: 0, active: -1, options: [],
     sort: { key: null, dir: null } };
-  const sortedRows = () => (state.report ? sortRows(state.report, state.sort.key, state.sort.dir) : []);
+  const currentView = () => reportView(state.report, state.metrics);
+  const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
   const PLACEHOLDER = {
     card: "Start typing a card name, e.g. red-eyes",
     set: "Start typing a box set or code, e.g. Magician's Force or MFC",
   };
-  const EXAMPLE = [
-    { kind: "card", text: "Red-Eyes Black Dragon" },
-    { kind: "card", text: "Alpha The Magnet Warrior" },
-    { kind: "set", text: "Magician's Force" },
-  ];
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
@@ -211,16 +220,6 @@
   }
   const fmtTime = (ms) => (ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(2)} s`);
 
-  function loadMetrics() {
-    try {
-      const saved = JSON.parse(localStorage.getItem("pulse.metrics") || "null");
-      if (Array.isArray(saved) && saved.length) return saved.filter((k) => METRICS.some((m) => m.key === k));
-    } catch (e) { /* storage unavailable */ }
-    return DEFAULT_METRICS.slice();
-  }
-  function saveMetrics() {
-    try { localStorage.setItem("pulse.metrics", JSON.stringify(state.metrics)); } catch (e) { /* ignore */ }
-  }
 
   async function loadIndex() {
     if (state.index) return state.index;
@@ -246,7 +245,7 @@
       const allOn = ms.every((m) => state.metrics.includes(m.key));
       return `<fieldset class="metric-group"><legend>${esc(g)}</legend>` +
         `<button type="button" class="link small" data-group="${esc(g)}">${allOn ? "Clear" : "Select all"}</button>` +
-        ms.map((m) => `<label class="metric"><input type="checkbox" value="${m.key}"${state.metrics.includes(m.key) ? " checked" : ""}>` +
+        ms.map((m) => `<label class="metric"><input type="checkbox" autocomplete="off" value="${m.key}"${state.metrics.includes(m.key) ? " checked" : ""}>` +
           `<span>${esc(m.label)}</span></label>`).join("") + `</fieldset>`;
     }).join("");
     updateRunState();
@@ -255,15 +254,18 @@
   function setMetrics(keys) {
     // keep sidebar order
     state.metrics = METRICS.map((m) => m.key).filter((k) => keys.includes(k));
-    saveMetrics();
     renderMetrics();
-    if (state.report) rebuild();
+    if (state.report) {
+      if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
+      render(); // removed metrics disappear; new ones show "--" until the report runs again
+    }
   }
 
   function updateRunState() {
     const none = state.metrics.length === 0;
     $("run").disabled = none;
     $("run").title = none ? "Pick at least one metric" : "";
+    $("metrics-hint").textContent = none ? "Pick at least one metric to run a report." : "Pick the columns for your report.";
   }
 
   // --- toggle ---
@@ -337,7 +339,8 @@
       : "Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.";
     // Once a report is showing, keep it in step with the search.
     if (state.report && state.index) {
-      if (state.items.length) rebuild(); else { state.report = null; $("results-panel").hidden = true; }
+      if (state.items.length) rebuild(state.report.columns.map((c) => c.key));
+      else { state.report = null; $("results-panel").hidden = true; $("run").classList.remove("attention"); }
     }
   }
 
@@ -363,30 +366,41 @@
   // --- report ---
   function render() {
     const r = state.report;
-    const n = r.rows.length;
+    const view = currentView();
+    const n = view.rows.length;
+    const live = view.columns.filter((c) => !c.pending).length;
     $("results-meta").innerHTML =
       `${n.toLocaleString()} row${n === 1 ? "" : "s"} from ${r.printings.toLocaleString()} printing${r.printings === 1 ? "" : "s"} · ` +
-      `${r.columns.length} metric${r.columns.length === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>`;
+      `${live} metric${live === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>`;
 
     const miss = $("missing");
     miss.hidden = !r.missing.length;
     miss.textContent = r.missing.length
       ? `No match for: ${r.missing.map((m) => `“${m.name}”`).join(", ")}.` : "";
 
-    const all = sortedRows();
+    $("pending").hidden = !view.pending;
+    $("run").classList.toggle("attention", view.pending);
+
+    const all = sortedRows(view);
     const shown = all.slice(0, MAX_ROWS_SHOWN);
     const icon = (k) => (state.sort.key !== k ? "↕" : state.sort.dir === "asc" ? "▲" : "▼");
     const aria = (k) => (state.sort.key !== k ? "none" : state.sort.dir === "asc" ? "ascending" : "descending");
-    $("report").innerHTML =
-      `<thead><tr>${r.columns.map((c) => `<th class="${c.long ? "long" : ""}" aria-sort="${aria(c.key)}">` +
+    const head = (c) => c.pending
+      ? `<th class="pending-col" title="Run the report again to fill this column"><span class="sort pending">${esc(c.label)}</span></th>`
+      : `<th class="${c.long ? "long" : ""}" aria-sort="${aria(c.key)}">` +
         `<button type="button" class="sort${state.sort.key === c.key ? " on" : ""}" data-k="${c.key}" ` +
-        `aria-label="Sort by ${esc(c.label)}">${esc(c.label)}<span class="sort-icon" aria-hidden="true">${icon(c.key)}</span></button></th>`).join("")}</tr></thead>` +
-      `<tbody>${shown.length
+        `aria-label="Sort by ${esc(c.label)}">${esc(c.label)}<span class="sort-icon" aria-hidden="true">${icon(c.key)}</span></button></th>`;
+    const cols = view.columns.length || 1;
+    $("report").innerHTML =
+      `<thead><tr>${view.columns.length ? view.columns.map(head).join("") : "<th>No metrics selected</th>"}</tr></thead>` +
+      `<tbody>${!view.columns.length
+        ? `<tr><td class="miss">Tick a metric in the sidebar and run the report.</td></tr>`
+        : shown.length
         ? shown.map((row) => `<tr>${row.map((v, i) => {
-            const c = r.columns[i];
-            return `<td class="${c.mono ? "code" : ""}${c.long ? " long" : ""}">${esc(v)}</td>`;
+            const c = view.columns[i];
+            return `<td class="${c.pending ? "pending-cell" : ""}${c.mono ? " code" : ""}${c.long ? " long" : ""}">${esc(v)}</td>`;
           }).join("")}</tr>`).join("")
-        : `<tr><td class="miss" colspan="${r.columns.length}">No rows. Add a card or box set that's in the catalog.</td></tr>`}</tbody>`;
+        : `<tr><td class="miss" colspan="${cols}">No rows. Add a card or box set that's in the catalog.</td></tr>`}</tbody>`;
 
     const t = $("truncated");
     t.hidden = all.length <= MAX_ROWS_SHOWN;
@@ -395,9 +409,11 @@
     $("results-panel").hidden = false;
   }
 
-  function rebuild() {
+  // Runs the report. keys = the metrics to fetch (the ticked ones on Run; the report's existing
+  // columns when only the search changed, so new metrics still need a Run).
+  function rebuild(keys) {
     const t0 = performance.now();
-    state.report = buildReport(state.index, state.items, state.metrics);
+    state.report = buildReport(state.index, state.items, keys || state.metrics);
     state.ms = performance.now() - t0;
     if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
     render();
@@ -423,7 +439,8 @@
 
   function downloadCSV() {
     if (!state.report) return;
-    const blob = new Blob([toCSV(state.report, sortedRows())], { type: "text/csv;charset=utf-8" });
+    const view = currentView();
+    const blob = new Blob([toCSV(view, sortedRows(view))], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `pulse-report-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -436,7 +453,8 @@
   async function copyCSV() {
     if (!state.report) return;
     const btn = $("copy-csv");
-    try { await navigator.clipboard.writeText(toCSV(state.report, sortedRows())); btn.textContent = "Copied"; }
+    const view = currentView();
+    try { await navigator.clipboard.writeText(toCSV(view, sortedRows(view))); btn.textContent = "Copied"; }
     catch (err) { btn.textContent = "Copy failed"; }
     setTimeout(() => (btn.textContent = "Copy CSV"), 1500);
   }
@@ -444,6 +462,7 @@
   // --- wiring ---
   $("version").textContent = "v" + VERSION;
   renderMetrics();
+  $("metric-groups").addEventListener("submit", (e) => e.preventDefault());
   $("metric-groups").addEventListener("change", (e) => {
     if (e.target.type !== "checkbox") return;
     const keys = new Set(state.metrics);
@@ -501,12 +520,6 @@
     state.report = null; state.items = []; renderChips(); $("results-panel").hidden = true;
   });
   $("search-form").addEventListener("submit", run);
-  $("example").addEventListener("click", async () => {
-    const index = await loadIndex();
-    state.items = [];
-    EXAMPLE.forEach((x) => addItem(resolve(index, x.kind, x.text)));
-    run();
-  });
   $("download-csv").addEventListener("click", downloadCSV);
   $("report").addEventListener("click", (e) => {
     const b = e.target.closest("button.sort");
