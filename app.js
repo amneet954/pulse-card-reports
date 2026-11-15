@@ -212,7 +212,8 @@
   const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
   const EXAMPLE = {
-    metrics: ["card_name", "rarity", "print_code", "box_name", "box_year"],
+    // The MVP report: the six metrics every Pulse report is built around.
+    metrics: ["card_name", "card_type", "rarity", "print_code", "box_name", "box_year"],
     items: [{ kind: "set", text: "Quarter Century Stampede" }],
   };
   const PLACEHOLDER = {
@@ -383,10 +384,7 @@
     const n = view.rows.length;
     // Total rows the report holds (all of them go into the CSV export).
     $("results-meta").innerHTML =
-      `<strong>${n.toLocaleString()} row${n === 1 ? "" : "s"}</strong>` +
-      `<br>Filter: ${state.lastRun && state.lastRun.items.length
-        ? state.lastRun.items.map((i) => esc(i.kind === "set" && i.set_code ? `${i.name} (${i.set_code})` : i.name)).join(", ")
-        : "none (whole catalog)"}`;
+      `<strong>${n.toLocaleString()} row${n === 1 ? "" : "s"}</strong>`;
 
     const miss = $("missing");
     miss.hidden = !r.missing.length;
@@ -544,7 +542,7 @@
     $("truncated").hidden = true;
     renderChips();
   });
-  // Try an example: Quarter Century Stampede with card and box metrics.
+  // Try an example: the MVP report (six metrics) for Quarter Century Stampede.
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();
     state.items = [];

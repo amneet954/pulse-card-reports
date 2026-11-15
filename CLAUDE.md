@@ -65,6 +65,8 @@ Rules:
    - **Card:** Card name, Card type (Monster/Spell/Trap), Attribute, Card description, Card rarity,
      Card set code (the printing, e.g. MFC-000)
    - **Box set:** Box name, Box set code (e.g. MFC), Box year
+   - **MVP report:** the core report Pulse is built around uses six metrics: Card name, Card type,
+     Card rarity, Card set code, Box name and Box year. Try an example runs exactly this report.
 5. **Filter (optional)**: one box with a **Card / Box set toggle** and **type-ahead suggestions** that
    ignore punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). Leaving it empty runs
    the report on the whole catalog (e.g. Box set metrics alone list every box set).
@@ -88,8 +90,9 @@ Rules:
 - OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
-- "Try an example" button, to help new users get started (built in v1.64: ticks Card name, Card
-  rarity, Card set code, Box name and Box year, filters to Quarter Century Stampede and runs)
+- "Try an example" button, to help new users get started (built in v1.64: runs the MVP report —
+  Card name, Card type, Card rarity, Card set code, Box name, Box year — filtered to Quarter
+  Century Stampede)
 
 ## Won't have (this time)
 - 1st Edition vs. Unlimited, and telling reprints apart
@@ -101,7 +104,8 @@ Rules:
 
 ## Versioning
 - Bump `VERSION` in `app.js` and add a `CHANGELOG.md` entry (what changed, why, what was left out)
-  for every release.
+  for every release. **The product owner sets version numbers:** stay on the current version
+  (v1.64) and record changes as hotfixes under it until told to move to the next one.
 - Commit messages explain what changed and why, in the same terms as the changelog.
 
 ## Technical constraints

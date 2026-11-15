@@ -40,7 +40,7 @@ search.
 | Filter by several at once | Add up to 20 cards and box sets, or paste a list |
 | One report table | Each row is a printing reduced to the chosen metrics; duplicate rows merge |
 | Work with the table | Sort any column up or down. By design, the screen shows at most 50 rows; the CSV export has them all |
-| Try an example | One tap runs a sample report: Quarter Century Stampede with card name, rarity, set code, box name and box year |
+| MVP report and Try an example | The core report uses six metrics: card name, card type, rarity, set code, box name and box year. Try an example runs it for Quarter Century Stampede |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
 | View on screen and export to CSV | Export CSV and Copy CSV, with the same columns as the screen |
 

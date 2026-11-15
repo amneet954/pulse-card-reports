@@ -21,6 +21,14 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Simpler filter label.** "Filter (optional)" is now "Filter", and the hint line under it is
   gone. A message appears only when the 20-item limit is reached.
 
+### Hotfix (still v1.64)
+- **Try an example now runs the MVP report:** Card name, Card type, Card rarity, Card set code,
+  Box name and Box year, filtered to Quarter Century Stampede. Adding Card type shows the example
+  covers Spells and Traps too (44 rows: 24 Monsters, 12 Spells, 8 Traps).
+- **Removed the "Filter:" line from the report header.** The filter is already visible above the
+  report, so the header shows only the row count.
+- PRD: the six-metric MVP report is now written into the Must haves.
+
 ### Notes
 - Version numbers skip 1.63 at the product owner's request.
 - Docs: the 50-row screen limit is now recorded as a deliberate design limitation in CLAUDE.md,
