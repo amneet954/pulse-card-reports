@@ -3,6 +3,24 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.4 — 2026-11-15
+
+**Theme:** make the filters as easy as the search.
+
+### Changed
+- **Rarity filter fills in from the selected cards (Must have).** Instead of an "All rarities"
+  dropdown, the filter shows every rarity the added cards were printed in, as tap-to-select
+  buttons. Adding Dark Magician shows its 17 rarities; adding Dark Magician Girl adds hers (19 in
+  total). Pick several at once; pick none to see every rarity.
+- **Set filter has type-ahead (Must have).** Typing "magicians" or "MFC" suggests
+  "Magician's Force (MFC)": the set name with its set code in parentheses. Suggestions are limited
+  to sets the added cards appear in, or every set if no card is added yet. Several sets can be
+  picked; each shows as a removable chip.
+
+### Why
+Typing a rarity or set exactly right is slow at the counter. Showing only the options that exist
+for the chosen cards removes guesswork and dead-end filters.
+
 ## v1.3 — 2026-11-15
 
 **Theme:** make the language and region scope explicit.

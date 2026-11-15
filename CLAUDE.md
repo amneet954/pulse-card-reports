@@ -62,7 +62,11 @@ Rules:
 4. **Type-ahead suggestions** that narrow as you type and ignore punctuation and spacing
    ("red eyes" finds "Red-Eyes Black Dragon").
 5. Search **several cards or box sets at once** (up to 20; pasting a list works).
-6. **Optional filters** behind "+ Add filter": rarity and set name/code, for card results.
+6. **Optional filters** behind "+ Add filter", for card results:
+   - **Rarity:** options fill in automatically with every rarity the selected cards were printed in
+     (multi-select; none selected = all rarities).
+   - **Set name or code:** type-ahead suggestions shown as "Magician's Force (MFC)", limited to the
+     sets the selected cards appear in (multi-select).
 7. **Card report:** each card with every printing — set code, box set, rarity, release date.
 8. **Box set report:** each box set with every covered card — set code, card, rarity, description.
 9. Results in **under 2 seconds**, usable on a tablet.

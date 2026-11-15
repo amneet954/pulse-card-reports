@@ -37,7 +37,7 @@ search.
 | One search, cards or box sets | A single search box with a Card / Box set toggle; one report can mix both |
 | Type-ahead suggestions | Results narrow as you type; "red eyes" finds Red-Eyes Black Dragon |
 | Search several at once | Add up to 20 cards and box sets, or paste a list |
-| Filter card results by rarity and set | Optional, behind "+ Add filter" |
+| Filter card results by rarity and set | Optional, behind "+ Add filter". Rarities fill in from the chosen cards; sets have type-ahead, shown as "Magician's Force (MFC)" |
 | Release date per printing | Tells a 2002 printing from a 2023 reprint |
 | Box set view with description, rarity and set number | Every covered card in the set |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |

@@ -1,8 +1,8 @@
-// Pulse Card Reports v1.3 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.4 — see CLAUDE.md for scope and CHANGELOG.md for history.
 (function () {
   "use strict";
 
-  const VERSION = "1.3";
+  const VERSION = "1.4";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
 
@@ -43,7 +43,8 @@
     return { cards, sets, printingsBySet, scope: data.scope || null };
   }
 
-  function suggest(index, kind, text, limit) {
+  // within: optional Set of set names to limit box set suggestions to.
+  function suggest(index, kind, text, limit, within) {
     const q = norm(text);
     if (!q) return [];
     const out = [];
@@ -54,9 +55,10 @@
       }
     } else {
       for (const set of index.sets) {
-        const sc = set.codeKey === q ? 0 : null;
+        if (within && !within.has(set.set_name)) continue;
+        const sc = set.codeKey === q ? 0 : set.codeKey.startsWith(q) ? 1 : null;
         const sn = score(q, set.key);
-        const s = sc !== null ? sc : sn;
+        const s = sc !== null && (sn === null || sc <= sn) ? sc : sn;
         if (s !== null) {
           out.push({ s, len: set.set_name.length, item: {
             kind: "set", name: set.set_name, set_code: set.set_code, date: set.date, in_scope: set.in_scope } });
@@ -97,14 +99,15 @@
     });
   }
 
-  function applyFilters(rows, rarity, setText) {
-    const st = norm(setText);
-    if (!rarity && !st) return rows;
+  // rarities: array of rarity names; sets: array of set names. Empty = no filter.
+  function applyFilters(rows, rarities, sets) {
+    const rs = new Set(rarities || []);
+    const ss = new Set(sets || []);
+    if (!rs.size && !ss.size) return rows;
     return rows.map((r) => {
       if (r.missing || r.kind !== "card") return r;
       const printings = r.printings.filter((p) =>
-        (!rarity || p.rarity === rarity) &&
-        (!st || norm(p.set_name).includes(st) || norm(p.set_code).includes(st)));
+        (!rs.size || rs.has(p.rarity)) && (!ss.size || ss.has(p.set_name)));
       return Object.assign({}, r, { printings, total: r.printings.length, filteredOut: printings.length === 0 });
     });
   }
@@ -142,7 +145,24 @@
     };
   }
 
-  const core = { norm, score, buildIndex, suggest, resolve, splitList, cardRows, setRows, applyFilters, toCSV, sampleToData };
+  // Rarities and sets across the selected cards, for the filters.
+  function selectedCards(index, items) {
+    return items.filter((i) => i.kind === "card" && !i.missing)
+      .map((i) => index.cards.find((c) => c.name === i.name)).filter(Boolean);
+  }
+  function raritiesFor(index, items) {
+    const out = new Set();
+    selectedCards(index, items).forEach((c) => c.printings.forEach((p) => p.rarity && out.add(p.rarity)));
+    return [...out].sort();
+  }
+  function setNamesFor(index, items) {
+    const out = new Set();
+    selectedCards(index, items).forEach((c) => c.printings.forEach((p) => out.add(p.set_name)));
+    return out;
+  }
+
+  const core = { norm, score, buildIndex, suggest, resolve, splitList, cardRows, setRows, applyFilters, toCSV, sampleToData,
+    raritiesFor, setNamesFor };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
@@ -253,6 +273,7 @@
     $("hint").textContent = state.items.length >= MAX_ITEMS
       ? `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`
       : "Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.";
+    refreshFilterOptions();
   }
 
   function choose(i) {
@@ -275,22 +296,95 @@
   }
 
   // --- filters ---
+  // Rarity options come from the selected cards; set suggestions come from the sets those
+  // cards were printed in (or every set when no card is selected yet).
+  state.filter = { rarities: new Set(), sets: [], setOptions: [], setActive: -1 };
+
   function showFilters(on) {
     $("filters").hidden = !on;
     $("add-filter").hidden = on;
-    if (!on) { $("rarity").value = ""; $("setfilter").value = ""; if (state.rows.length) render(); }
+    if (!on) {
+      state.filter.rarities.clear();
+      state.filter.sets = [];
+      $("setfilter").value = "";
+      closeSetSuggestions();
+      refreshFilterOptions();
+      if (state.rows.length) render();
+    }
   }
 
-  function refreshRarities() {
-    const sel = $("rarity");
-    const keep = sel.value;
-    const rarities = new Set();
-    state.rows.forEach((r) => (r.printings || []).forEach((p) => p.rarity && rarities.add(p.rarity)));
-    sel.innerHTML = '<option value="">All rarities</option>' +
-      [...rarities].sort().map((r) => `<option${r === keep ? " selected" : ""}>${esc(r)}</option>`).join("");
+  function refreshFilterOptions() {
+    if (!state.index) return;
+    const available = raritiesFor(state.index, state.items);
+    for (const r of [...state.filter.rarities]) if (!available.includes(r)) state.filter.rarities.delete(r);
+    $("rarity-options").innerHTML = available.length
+      ? available.map((r) => {
+          const on = state.filter.rarities.has(r);
+          return `<button type="button" class="pill${on ? " on" : ""}" aria-pressed="${on}" data-r="${esc(r)}">${esc(r)}</button>`;
+        }).join("")
+      : `<span class="hint">Add a card to see its rarities.</span>`;
+    const allowed = setNamesFor(state.index, state.items);
+    if (allowed.size) state.filter.sets = state.filter.sets.filter((n) => allowed.has(n));
+    renderSetChips();
   }
 
-  const visibleRows = () => applyFilters(state.rows, $("rarity").value, $("setfilter").value);
+  const setLabel = (o) => `${o.name || o.set_name}${o.set_code ? ` (${o.set_code})` : ""}`;
+
+  function renderSetChips() {
+    $("set-chips").innerHTML = state.filter.sets.map((name, i) => {
+      const set = state.index && state.index.sets.find((x) => x.set_name === name);
+      return `<span class="chip"><span class="chip-kind">Set</span>${esc(set ? setLabel(set) : name)}` +
+        `<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(name)}">×</button></span>`;
+    }).join("");
+  }
+
+  function closeSetSuggestions() {
+    $("set-suggestions").hidden = true;
+    $("setfilter").setAttribute("aria-expanded", "false");
+    state.filter.setOptions = [];
+    state.filter.setActive = -1;
+  }
+
+  function renderSetSuggestions() {
+    const list = $("set-suggestions");
+    const opts = state.filter.setOptions;
+    const q = $("setfilter").value.trim();
+    if (!opts.length) {
+      if (q) {
+        list.innerHTML = `<li class="empty">No set${state.items.some((i) => i.kind === "card") ? " for the selected cards" : ""} matches “${esc(q)}”.</li>`;
+        list.hidden = false;
+      } else closeSetSuggestions();
+      return;
+    }
+    list.innerHTML = opts.map((o, i) =>
+      `<li role="option" class="${i === state.filter.setActive ? "active" : ""}" aria-selected="${i === state.filter.setActive}" data-i="${i}">` +
+      `<span>${esc(setLabel(o))}</span><span class="opt-meta">${esc(year(o.date))}</span></li>`).join("");
+    list.hidden = false;
+    $("setfilter").setAttribute("aria-expanded", "true");
+  }
+
+  async function updateSetSuggestions() {
+    const text = $("setfilter").value;
+    if (!norm(text)) { closeSetSuggestions(); return; }
+    const index = await loadIndex();
+    const allowed = setNamesFor(index, state.items);
+    state.filter.setOptions = suggest(index, "set", text, MAX_SUGGESTIONS, allowed.size ? allowed : null)
+      .filter((o) => !state.filter.sets.includes(o.name));
+    state.filter.setActive = state.filter.setOptions.length ? 0 : -1;
+    renderSetSuggestions();
+  }
+
+  function chooseSet(i) {
+    const o = state.filter.setOptions[i];
+    if (!o) return;
+    if (!state.filter.sets.includes(o.name)) state.filter.sets.push(o.name);
+    $("setfilter").value = "";
+    closeSetSuggestions();
+    renderSetChips();
+    if (state.rows.length) render();
+  }
+
+  const visibleRows = () => applyFilters(state.rows, [...state.filter.rarities], state.filter.sets);
 
   // --- report ---
   function render() {
@@ -357,7 +451,6 @@
       const sets = state.items.filter((i) => i.kind === "set");
       state.rows = cardRows(index, cards).concat(setRows(index, sets));
       state.ms = performance.now() - t0;
-      refreshRarities();
       render();
       $("results-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     } finally {
@@ -423,7 +516,10 @@
     const li = e.target.closest("li[data-i]");
     if (li) { e.preventDefault(); choose(Number(li.dataset.i)); }
   });
-  document.addEventListener("click", (e) => { if (!e.target.closest(".combo")) closeSuggestions(); });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#q-combo")) closeSuggestions();
+    if (!e.target.closest("#set-combo")) closeSetSuggestions();
+  });
   $("chips").addEventListener("click", (e) => {
     const x = e.target.closest(".chip-x");
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
@@ -431,10 +527,39 @@
   $("clear").addEventListener("click", () => {
     state.items = []; renderChips(); $("results-panel").hidden = true; state.rows = [];
   });
-  $("add-filter").addEventListener("click", () => { showFilters(true); $("rarity").focus(); });
+  $("add-filter").addEventListener("click", async () => { await loadIndex(); refreshFilterOptions(); showFilters(true); });
   $("clear-filters").addEventListener("click", () => showFilters(false));
-  $("rarity").addEventListener("change", () => state.rows.length && render());
-  $("setfilter").addEventListener("input", () => state.rows.length && render());
+  $("rarity-options").addEventListener("click", (e) => {
+    const b = e.target.closest(".pill");
+    if (!b) return;
+    const r = b.dataset.r;
+    if (state.filter.rarities.has(r)) state.filter.rarities.delete(r); else state.filter.rarities.add(r);
+    refreshFilterOptions();
+    if (state.rows.length) render();
+  });
+  $("setfilter").addEventListener("input", updateSetSuggestions);
+  $("setfilter").addEventListener("focus", updateSetSuggestions);
+  $("setfilter").addEventListener("keydown", (e) => {
+    const n = state.filter.setOptions.length;
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && n) {
+      e.preventDefault();
+      state.filter.setActive = (state.filter.setActive + (e.key === "ArrowDown" ? 1 : -1) + n) % n;
+      renderSetSuggestions();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (n && state.filter.setActive >= 0) chooseSet(state.filter.setActive);
+    } else if (e.key === "Escape") {
+      closeSetSuggestions();
+    }
+  });
+  $("set-suggestions").addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (li) { e.preventDefault(); chooseSet(Number(li.dataset.i)); }
+  });
+  $("set-chips").addEventListener("click", (e) => {
+    const x = e.target.closest(".chip-x");
+    if (x) { state.filter.sets.splice(Number(x.dataset.i), 1); renderSetChips(); if (state.rows.length) render(); }
+  });
   $("search-form").addEventListener("submit", run);
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();

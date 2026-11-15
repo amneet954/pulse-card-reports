@@ -139,3 +139,11 @@ details.inline { display: inline; }
 details.inline summary { display: inline; list-style: none; color: var(--accent); font-size: 13px; padding: 0 4px; }
 details.inline summary::-webkit-details-marker { display: none; }
 details.inline[open] p { display: block; }
+
+.field.full { grid-column: 1 / -1; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill {
+  font: inherit; font-size: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer;
+}
+.pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }

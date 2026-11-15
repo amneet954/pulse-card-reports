@@ -15,7 +15,7 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.3</span>
+      <span class="version" id="version">v1.4</span>
     </div>
   </header>
 
@@ -28,7 +28,7 @@
             <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
             <button type="button" class="seg" role="radio" aria-checked="false" data-kind="set">Box set</button>
           </div>
-          <div class="combo">
+          <div class="combo" id="q-combo">
             <input id="q" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
               aria-controls="suggestions" placeholder="Start typing a card name, e.g. red-eyes" spellcheck="false">
             <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
@@ -42,13 +42,19 @@
           <button type="button" class="link" id="add-filter">+ Add filter</button>
         </div>
         <div class="filters" id="filters" hidden>
-          <div class="field">
-            <label for="rarity" class="label">Rarity</label>
-            <select id="rarity"><option value="">All rarities</option></select>
+          <div class="field full">
+            <span class="label" id="rarity-label">Rarity</span>
+            <div class="pills" id="rarity-options" role="group" aria-labelledby="rarity-label"></div>
+            <p class="hint">Rarities come from the cards you've added. Pick none to see every rarity.</p>
           </div>
-          <div class="field">
-            <label for="setfilter" class="label">Set name or code contains</label>
-            <input id="setfilter" type="text" placeholder="e.g. Magician's Force or MFC">
+          <div class="field full">
+            <label for="setfilter" class="label">Set name or code</label>
+            <div class="combo" id="set-combo">
+              <input id="setfilter" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                aria-controls="set-suggestions" placeholder="Start typing, e.g. magician or MFC" spellcheck="false">
+              <ul id="set-suggestions" class="suggestions" role="listbox" hidden></ul>
+            </div>
+            <div class="chips" id="set-chips" aria-label="Set filters"></div>
           </div>
           <p class="hint full">Filters apply to card results. <button type="button" class="link" id="clear-filters">Remove filters</button></p>
         </div>
