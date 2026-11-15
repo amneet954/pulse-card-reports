@@ -82,6 +82,12 @@ Rules:
 9. **View results on screen and export to CSV** (same columns and sort order as the screen; CSV has every row).
 
 ## Should have
+- **Card rarity filter** in the Filter section, shown when the Card toggle is selected. It reads
+  "Card rarity **is** / **is not**": type a rarity (not case-sensitive), press Enter, and it becomes
+  a chip; add as many as needed (e.g. Common, Ultra Rare). "Is" keeps only those rarities; "is not"
+  excludes them. Why: one card can have many rarities, and many printings within each rarity
+  (Red-Eyes Black Dragon has 8 Common and 13 Ultra Rare printings), so narrowing by rarity is often
+  the fastest way to the printing a customer asked for.
 - Full, up-to-date catalog: every set and every card, including cards first released in later
   years (e.g. 2022 or 2026). When building it, decide whether to include Tokens (English printings
   from 2008) and Skill Cards (Speed Duel).
