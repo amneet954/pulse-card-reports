@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse Card Reports</title>
+  <meta name="description" content="Look up which Yu-Gi-Oh cards belong to which box sets, for many cards at once.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">P</span>
+      <div>
+        <h1>Pulse Card Reports</h1>
+        <p class="tagline">Which card belongs in which box, for every card at once.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="Search">
+      <div class="modes" role="tablist" aria-label="Report type">
+        <button class="mode active" role="tab" aria-selected="true" data-mode="card">Search by card</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="set">Search by box set</button>
+      </div>
+
+      <form id="search-form" autocomplete="off">
+        <label for="terms" class="label" id="terms-label">Card names, one per line</label>
+        <textarea id="terms" rows="4" spellcheck="false"
+          placeholder="Dark Magician&#10;Blue-Eyes White Dragon"></textarea>
+        <p class="hint" id="terms-hint">Search up to 20 at once. Separate with new lines or commas.</p>
+
+        <div class="filters" id="card-filters">
+          <div class="field">
+            <label for="rarity" class="label">Rarity</label>
+            <select id="rarity"><option value="">All rarities</option></select>
+          </div>
+          <div class="field">
+            <label for="setfilter" class="label">Set name or code contains</label>
+            <input id="setfilter" type="text" placeholder="e.g. Magician's Force or MFC">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary" id="run">Run report</button>
+          <button type="button" class="ghost" id="example">Try an example</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <section class="panel results" aria-live="polite" id="results-panel" hidden>
+      <div class="results-head">
+        <div>
+          <h2 id="results-title">Report</h2>
+          <p class="meta" id="results-meta"></p>
+        </div>
+        <div class="export">
+          <button type="button" class="ghost" id="copy-csv">Copy CSV</button>
+          <button type="button" class="primary" id="download-csv">Export CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="report">
+          <thead id="report-head"></thead>
+          <tbody id="report-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Card data from the <a href="https://ygoprodeck.com/api-guide/">YGOPRODeck API</a>.
+    Pulse is a fictional company in a product management case study.
+    Not affiliated with Konami.
+  </footer>
+
+  <script src="sample-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
