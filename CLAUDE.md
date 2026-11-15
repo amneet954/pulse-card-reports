@@ -65,17 +65,16 @@ Rules:
    - **Card:** Card name, Card type (Monster/Spell/Trap), Attribute, Card description, Card rarity,
      Card set code (the printing, e.g. MFC-000)
    - **Box set:** Box name, Box set code (e.g. MFC), Year
-5. **One search box** with a **Card / Box set toggle** and **type-ahead suggestions** that ignore
-   punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). No filters in the search.
-6. Search **several cards or box sets at once** (up to 20; pasting a list works).
+5. **Filter (optional)**: one box with a **Card / Box set toggle** and **type-ahead suggestions** that
+   ignore punctuation and spacing ("red eyes" finds "Red-Eyes Black Dragon"). Leaving it empty runs
+   the report on the whole catalog (e.g. Box set metrics alone list every box set).
+6. Filter by **several cards or box sets at once** (up to 20; pasting a list works).
 7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
    are merged.
    - **Sortable columns:** a sort icon on every header toggles ascending / descending (natural sort
      for years and set codes; blanks last).
    - **50-row screen limit:** the table shows up to 50 rows with a note to export the full report
      as CSV.
-   - **Stays in sync:** once a report is showing, changing the metrics adds or removes columns
-     immediately, and changing the search updates the rows.
 8. Results in **under 2 seconds**, usable on a tablet.
 9. **View results on screen and export to CSV** (same columns and sort order as the screen; CSV has every row).
 

@@ -3,6 +3,27 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.62 — 2026-11-15
+
+**Theme:** reports change only when they're run.
+
+### Changed
+- **No automatic updates after a report runs.** Adding or removing a card or box set in the
+  filter, or ticking a new metric, no longer changes the data on screen. A warning appears above
+  the filter, "Changes to the report have been selected. Please rerun the report for new
+  reporting.", and the Run button is highlighted. Undoing the change hides the warning again.
+  (Unticking a metric still hides its column; new metrics still show "--" until the re-run.)
+- **The search is now an optional Filter (Must have).** Leave it empty to report on the whole
+  catalog: Box set metrics alone list all 461 box sets; Card metrics alone list all 1,398 cards;
+  both together list all 9,163 printings. Add cards or box sets to narrow it down. Run only needs
+  at least one metric.
+- The report header shows which filter the data was run with ("Filter: none (whole catalog)").
+- "Clear all" clears the filter only; the last report stays until the next run.
+
+### Why
+Make reporting feel like a real system, where new data comes from running a query, and let staff
+report on the whole catalog without typing a search first.
+
 ## v1.61 — 2026-11-15
 
 **Theme:** make the baseline report behave like a real reporting tool.

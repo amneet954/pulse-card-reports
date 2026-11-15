@@ -15,7 +15,7 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.61</span>
+      <span class="version" id="version">v1.62</span>
     </div>
   </header>
 
@@ -29,11 +29,12 @@
     </aside>
 
     <main>
-      <section class="panel" aria-label="Search">
+      <section class="panel" aria-label="Filter">
+        <div class="stale" id="stale" role="status" hidden>Changes to the report have been selected. Please rerun the report for new reporting.</div>
         <form id="search-form" autocomplete="off">
-          <label for="q" class="label">Search</label>
+          <label for="q" class="label">Filter <span class="optional">(optional)</span></label>
           <div class="searchbar">
-            <div class="toggle" role="radiogroup" aria-label="Search for">
+            <div class="toggle" role="radiogroup" aria-label="Filter by">
               <button type="button" class="seg active" role="radio" aria-checked="true" data-kind="card">Card</button>
               <button type="button" class="seg" role="radio" aria-checked="false" data-kind="set">Box set</button>
             </div>
@@ -43,9 +44,9 @@
               <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
             </div>
           </div>
-          <p class="hint" id="hint">Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.</p>
+          <p class="hint" id="hint">Optional. Leave empty to report on the whole catalog, or add up to 20 cards and box sets.</p>
 
-          <div class="chips" id="chips" aria-label="Selected searches"></div>
+          <div class="chips" id="chips" aria-label="Filter values"></div>
 
           <div class="actions">
             <button type="submit" class="primary" id="run">Run report</button>

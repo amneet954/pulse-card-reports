@@ -36,10 +36,10 @@ search.
 | English TCG products | English-language TCG printings only (North American, European/Australian English and EN codes) |
 | Related data model | Cards and box sets are separate tables joined by printings (`data/catalog.json`) |
 | Metrics sidebar | Pick columns from two groups: **Card** (name, type, attribute, description, rarity, set code) and **Box set** (name, set code, year) |
-| One search, cards or box sets | A single search box with a Card / Box set toggle and type-ahead ("red eyes" finds Red-Eyes Black Dragon) |
-| Search several at once | Add up to 20 cards and box sets, or paste a list |
+| Optional filter, cards or box sets | One box with a Card / Box set toggle and type-ahead ("red eyes" finds Red-Eyes Black Dragon). Leave it empty to report on the whole catalog |
+| Filter by several at once | Add up to 20 cards and box sets, or paste a list |
 | One report table | Each row is a printing reduced to the chosen metrics; duplicate rows merge |
-| Work with the table | Sort any column up or down; the screen shows 50 rows and CSV has them all; changing metrics or searches updates the report instantly |
+| Work with the table | Sort any column up or down; the screen shows 50 rows and CSV has them all |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
 | View on screen and export to CSV | Export CSV and Copy CSV, with the same columns as the screen |
 

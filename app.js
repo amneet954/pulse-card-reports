@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.61 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.62 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.61";
+  const VERSION = "1.62";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
@@ -110,11 +110,13 @@
   ];
   const DEFAULT_METRICS = ["card_name", "card_type", "rarity", "print_code", "box_name", "box_year"];
 
-  // Printings for the searched cards and box sets, oldest first within each card.
+  // Printings for the filtered cards and box sets, oldest first within each card.
+  // An empty filter means the whole catalog.
   function collectPrintings(index, items) {
     const seen = new Set();
     const out = [];
     const add = (p) => { if (!seen.has(p)) { seen.add(p); out.push(p); } };
+    if (!items.length) index.printings.forEach(add);
     for (const it of items) {
       if (it.missing) continue;
       const list = it.kind === "card" ? index.byCard.get(it.id) : index.bySet.get(it.id);
@@ -205,7 +207,7 @@
   const $ = (id) => document.getElementById(id);
   // Nothing is saved between visits: a refresh starts with no metrics, no search and no report.
   const state = { kind: "card", items: [], index: null, metrics: [], report: null, ms: 0, active: -1, options: [],
-    sort: { key: null, dir: null } };
+    sort: { key: null, dir: null }, lastRun: null };
   const currentView = () => reportView(state.report, state.metrics);
   const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
@@ -259,6 +261,7 @@
       if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
       render(); // removed metrics disappear; new ones show "--" until the report runs again
     }
+    updateStale();
   }
 
   function updateRunState() {
@@ -336,12 +339,8 @@
     $("clear").hidden = state.items.length === 0;
     $("hint").textContent = state.items.length >= MAX_ITEMS
       ? `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`
-      : "Pick from the list to add it. Add up to 20 cards and box sets, or paste a list.";
-    // Once a report is showing, keep it in step with the search.
-    if (state.report && state.index) {
-      if (state.items.length) rebuild(state.report.columns.map((c) => c.key));
-      else { state.report = null; $("results-panel").hidden = true; $("run").classList.remove("attention"); }
-    }
+      : "Optional. Leave empty to report on the whole catalog, or add up to 20 cards and box sets.";
+    updateStale(); // the report itself only changes when it runs again
   }
 
   function choose(i) {
@@ -363,6 +362,17 @@
     return true;
   }
 
+  // --- stale warning ---
+  // After a report runs, changing the filter or the metrics doesn't change the data shown.
+  // A warning above the filter asks for a re-run instead.
+  const filterKey = () => state.items.map((i) => `${i.kind}:${i.name}`).join("|");
+  function updateStale() {
+    const stale = !!state.report && !!state.lastRun &&
+      (state.lastRun.filter !== filterKey() || state.lastRun.metrics !== state.metrics.join("|"));
+    $("stale").hidden = !stale;
+    $("run").classList.toggle("attention", stale);
+  }
+
   // --- report ---
   function render() {
     const r = state.report;
@@ -371,7 +381,10 @@
     const live = view.columns.filter((c) => !c.pending).length;
     $("results-meta").innerHTML =
       `${n.toLocaleString()} row${n === 1 ? "" : "s"} from ${r.printings.toLocaleString()} printing${r.printings === 1 ? "" : "s"} · ` +
-      `${live} metric${live === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>`;
+      `${live} metric${live === 1 ? "" : "s"} · ready in <strong>${fmtTime(state.ms)}</strong>` +
+      `<br>Filter: ${state.lastRun && state.lastRun.items.length
+        ? state.lastRun.items.map((i) => esc(i.kind === "set" && i.set_code ? `${i.name} (${i.set_code})` : i.name)).join(", ")
+        : "none (whole catalog)"}`;
 
     const miss = $("missing");
     miss.hidden = !r.missing.length;
@@ -379,7 +392,6 @@
       ? `No match for: ${r.missing.map((m) => `“${m.name}”`).join(", ")}.` : "";
 
     $("pending").hidden = !view.pending;
-    $("run").classList.toggle("attention", view.pending);
 
     const all = sortedRows(view);
     const shown = all.slice(0, MAX_ROWS_SHOWN);
@@ -415,14 +427,15 @@
     const t0 = performance.now();
     state.report = buildReport(state.index, state.items, keys || state.metrics);
     state.ms = performance.now() - t0;
+    state.lastRun = { filter: filterKey(), metrics: state.metrics.join("|"), items: state.items.slice() };
     if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
     render();
+    updateStale();
   }
 
   async function run(e) {
     if (e) e.preventDefault();
     await commitTyped();
-    if (!state.items.length) { $("q").focus(); return; }
     if (!state.metrics.length) return;
     const btn = $("run");
     btn.disabled = true;
@@ -516,9 +529,7 @@
     const x = e.target.closest(".chip-x");
     if (x) { state.items.splice(Number(x.dataset.i), 1); renderChips(); }
   });
-  $("clear").addEventListener("click", () => {
-    state.report = null; state.items = []; renderChips(); $("results-panel").hidden = true;
-  });
+  $("clear").addEventListener("click", () => { state.items = []; renderChips(); });
   $("search-form").addEventListener("submit", run);
   $("download-csv").addEventListener("click", downloadCSV);
   $("report").addEventListener("click", (e) => {
