@@ -1,4 +1,4 @@
-// Builds data/cards.json from the YGOPRODeck API (v1 data scope).
+// Builds data/catalog.json from the YGOPRODeck API (v1 data scope).
 //
 // Scope: every card (monsters including Fusion and Ritual, Spells and Traps) that was
 // printed in the first 11 TCG booster sets
@@ -56,42 +56,57 @@ const scopeNames = new Set(scopeSets.map((s) => s.set_name));
 //    Tokens and Skill Cards are left out: no English printings of either exist in this era
 //    (English Tokens start in 2008; Skill Cards belong to Speed Duel, from 2018-19).
 const all = (await getJSON(`${API}/cardinfo.php`)).data;
-const cards = [];
+const kept = [];
 for (const c of all) {
   if (!/Monster|Spell|Trap/i.test(c.type || "") || /Token/i.test(c.type || "")) continue;
   const printings = (c.card_sets || []).filter((p) => isEnglishTCG(p.set_code));
   if (!printings.some((p) => scopeNames.has(p.set_name))) continue;
-  cards.push({
-    id: c.id,
-    name: c.name,
-    type: c.type,
-    desc: c.desc,
-    printings: printings
-      .map((p) => ({
-        set_name: p.set_name,
-        set_code: p.set_code,
-        rarity: p.set_rarity,
-        date: setByName.get(p.set_name)?.tcg_date || null,
-      }))
-      .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999") || a.set_code.localeCompare(b.set_code)),
-  });
+  kept.push({ c, printings });
 }
-cards.sort((a, b) => a.name.localeCompare(b.name));
+kept.sort((a, b) => a.c.name.localeCompare(b.c.name));
 
-// 4. Every set any of these cards appears in (for box set search).
-const usedSetNames = new Set(cards.flatMap((c) => c.printings.map((p) => p.set_name)));
-const outSets = sets
-  .filter((s) => usedSetNames.has(s.set_name))
-  .map((s) => ({
-    set_name: s.set_name,
-    set_code: s.set_code,
-    date: s.tcg_date || null,
-    in_scope: scopeNames.has(s.set_name),
-    booster: boosters.some((b) => b.set_name === s.set_name),
-  }))
-  .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999") || a.set_name.localeCompare(b.set_name));
+// 4. Write three related tables, like a small relational database:
+//    cards     — one row per card (name, type, attribute, description)
+//    sets      — one row per box set (name, set code, release date)
+//    printings — one row per card-in-a-set printing; links a card to a set,
+//                with that printing's set code (e.g. MFC-000) and rarity.
+const cardType = (t) => (/Spell/i.test(t) ? "Spell" : /Trap/i.test(t) ? "Trap" : "Monster");
+const outCards = kept.map(({ c }) => ({
+  id: c.id,
+  name: c.name,
+  card_type: cardType(c.type),
+  subtype: c.type,
+  attribute: c.attribute || null, // monsters only (DARK, LIGHT, ...); null for Spells and Traps
+  desc: c.desc,
+}));
+
+const setIdByName = new Map();
+const outSets = [];
+function setIdFor(name, printingCode) {
+  if (setIdByName.has(name)) return setIdByName.get(name);
+  const s = setByName.get(name);
+  const id = outSets.length;
+  outSets.push({
+    id,
+    set_name: name,
+    set_code: s?.set_code || String(printingCode || "").split("-")[0] || null,
+    date: s?.tcg_date || null,
+    in_scope: scopeNames.has(name),
+    booster: boosters.some((b) => b.set_name === name),
+  });
+  setIdByName.set(name, id);
+  return id;
+}
+
+const outPrintings = [];
+for (const { c, printings } of kept) {
+  for (const p of printings) {
+    outPrintings.push({ card_id: c.id, set_id: setIdFor(p.set_name, p.set_code), code: p.set_code, rarity: p.set_rarity });
+  }
+}
 
 const data = {
+  schema_version: 2,
   scope: {
     description: "English-language TCG printings of Monsters (including Fusion and Ritual), Spells and Traps printed in the first 11 TCG booster sets (Legend of Blue Eyes White Dragon to Ancient Sanctuary) or in side products released by Ancient Sanctuary's date, with all of their printings to date.",
     boosters: boosters.map((s) => ({ set_name: s.set_name, set_code: s.set_code, date: s.tcg_date }))
@@ -99,27 +114,29 @@ const data = {
     era_end: eraEnd,
     side_products: scopeSets.length - boosters.length,
   },
+  cards: outCards,
   sets: outSets,
-  cards,
+  printings: outPrintings,
 };
 
 await mkdir("data", { recursive: true });
 const body = JSON.stringify(data);
 let previous = "";
-try { previous = await readFile("data/cards.json", "utf8"); } catch {}
+try { previous = await readFile("data/catalog.json", "utf8"); } catch {}
 if (previous === body) {
   console.log("No change in card data.");
 } else {
-  await writeFile("data/cards.json", body);
+  await writeFile("data/catalog.json", body);
   await writeFile("data/meta.json", JSON.stringify({
     generated_at: new Date().toISOString(),
     source: "YGOPRODeck API v7",
-    cards: cards.length,
-    monsters: cards.filter((c) => /Monster/i.test(c.type)).length,
-    spells: cards.filter((c) => /Spell/i.test(c.type)).length,
-    traps: cards.filter((c) => /Trap/i.test(c.type)).length,
+    schema_version: 2,
+    cards: outCards.length,
+    monsters: outCards.filter((c) => c.card_type === "Monster").length,
+    spells: outCards.filter((c) => c.card_type === "Spell").length,
+    traps: outCards.filter((c) => c.card_type === "Trap").length,
     sets: outSets.length,
-    printings: cards.reduce((n, c) => n + c.printings.length, 0),
+    printings: outPrintings.length,
   }, null, 2) + "\n");
-  console.log(`Wrote ${cards.length} cards across ${outSets.length} sets (era ends ${eraEnd}).`);
+  console.log(`Wrote ${outCards.length} cards, ${outSets.length} sets, ${outPrintings.length} printings (era ends ${eraEnd}).`);
 }

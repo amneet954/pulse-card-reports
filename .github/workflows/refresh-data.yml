@@ -1,6 +1,6 @@
 name: Refresh card data
 
-# Rebuilds data/cards.json from the YGOPRODeck API so new reprints of
+# Rebuilds data/catalog.json from the YGOPRODeck API so new reprints of
 # covered monsters show up without a code change.
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build data/cards.json
+      - name: Build data/catalog.json
         run: node scripts/build-data.mjs
       - name: Commit if the data changed
         run: |
@@ -38,6 +38,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          git commit -m "Refresh card data from YGOPRODeck" -m "Automated weekly rebuild of data/cards.json by the Refresh card data workflow."
+          git commit -m "Refresh card data from YGOPRODeck" -m "Automated weekly rebuild of data/catalog.json by the Refresh card data workflow."
           git pull --rebase
           git push
