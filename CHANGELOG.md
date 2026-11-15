@@ -28,6 +28,17 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Removed the "Filter:" line from the report header.** The filter is already visible above the
   report, so the header shows only the row count.
 - PRD: the six-metric MVP report is now written into the Must haves.
+- **Select all and Clear all for metrics.** At the top of the Metrics sidebar (all metrics) and on
+  each group (Card, Box set). "Select all" shows whenever something is unticked, "Clear all"
+  whenever something is ticked, so with 4 of 9 ticked you get both.
+- **Royal blue instead of purple.** Buttons, checkboxes, focus rings and highlights now use royal
+  blue (#4169E1). Checkboxes are drawn by the app so they stay blue in every browser and mode.
+  Notifications stay yellow.
+- **Light / dark mode (trial).** A System / Light / Dark switch in the header, next to the version,
+  defaulting to System (follows the device). In dark mode, blue text such as the row count and
+  the Select all / Clear all links turns white; buttons and checkboxes stay blue. Not saved between
+  visits. Built to be removable: delete `theme.css`, `theme.js`, their two lines in `index.html`
+  and the `#theme-slot` element, and the app stays in light mode.
 
 ### Notes
 - Version numbers skip 1.63 at the product owner's request.

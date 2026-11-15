@@ -1,0 +1,55 @@
+/* Light / dark mode.
+ *
+ * Self-contained so it can be removed cleanly: delete this file, theme.js, the
+ * <link>/<script> lines for them in index.html, and the #theme-slot element.
+ * The app then stays in light mode (the colors in styles.css).
+ *
+ * Dark colors apply when the user picks Dark, or when they pick System (the default)
+ * and their device is in dark mode. Notifications stay yellow in both modes.
+ */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1218;
+  --panel: #171b23;
+  --ink: #e7eaf0;
+  --muted: #9aa3b3;
+  --line: #2b313d;
+  --accent: #4169e1;
+  --accent-ink: #ffffff;
+  --accent-soft: #1f2a44;
+  --accent-text: #ffffff;
+  --field: #11151c;
+  --row-alt: #1b2029;
+  --hover: rgba(255, 255, 255, .07);
+  --chip-missing: #22262e;
+  --shadow: rgba(0, 0, 0, .5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1218;
+    --panel: #171b23;
+    --ink: #e7eaf0;
+    --muted: #9aa3b3;
+    --line: #2b313d;
+    --accent: #4169e1;
+    --accent-ink: #ffffff;
+    --accent-soft: #1f2a44;
+    --accent-text: #ffffff;
+    --field: #11151c;
+    --row-alt: #1b2029;
+    --hover: rgba(255, 255, 255, .07);
+    --chip-missing: #22262e;
+    --shadow: rgba(0, 0, 0, .5);
+  }
+}
+
+/* The toggle itself */
+.theme-toggle { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.theme-toggle button {
+  border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600;
+  padding: 6px 10px; border-radius: 999px; cursor: pointer; min-height: 32px;
+}
+.theme-toggle button[aria-checked="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px var(--shadow); }

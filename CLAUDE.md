@@ -125,3 +125,7 @@ Rules:
 - `scripts/build-data.mjs` — builds the data from YGOPRODeck
 - `sample-data.js` — fallback data (3 real cards; not complete)
 - `CHANGELOG.md` — release history
+- `theme.css`, `theme.js` — light / dark mode (trial, removable). To remove: delete both files,
+  their `<link>` / `<script>` lines in `index.html` and the `#theme-slot` element. All colors live
+  in CSS variables at the top of `styles.css` (royal blue `--accent`, `--accent-text` for blue
+  text); `theme.css` only overrides those variables for dark mode.

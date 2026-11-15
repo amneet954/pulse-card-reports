@@ -246,16 +246,33 @@
 
   // --- metrics sidebar ---
   function renderMetrics() {
+    // "Select all" shows when anything is unticked; "Clear all" shows when anything is ticked.
+    const controls = (scope, keys) => {
+      const on = keys.filter((k) => state.metrics.includes(k)).length;
+      return `<span class="metric-actions">` +
+        (on < keys.length ? `<button type="button" class="link small" data-scope="${esc(scope)}" data-act="all">Select all</button>` : "") +
+        (on > 0 ? `<button type="button" class="link small" data-scope="${esc(scope)}" data-act="none">Clear all</button>` : "") +
+        `</span>`;
+    };
+    $("metrics-actions").innerHTML = controls("*", METRICS.map((m) => m.key));
     const groups = [...new Set(METRICS.map((m) => m.group))];
     $("metric-groups").innerHTML = groups.map((g) => {
       const ms = METRICS.filter((m) => m.group === g);
-      const allOn = ms.every((m) => state.metrics.includes(m.key));
-      return `<fieldset class="metric-group"><legend>${esc(g)}</legend>` +
-        `<button type="button" class="link small" data-group="${esc(g)}">${allOn ? "Clear" : "Select all"}</button>` +
+      return `<fieldset class="metric-group"><div class="metric-group-head"><legend>${esc(g)}</legend>` +
+        controls(g, ms.map((m) => m.key)) + `</div>` +
         ms.map((m) => `<label class="metric"><input type="checkbox" autocomplete="off" value="${m.key}"${state.metrics.includes(m.key) ? " checked" : ""}>` +
           `<span>${esc(m.label)}</span></label>`).join("") + `</fieldset>`;
     }).join("");
     updateRunState();
+  }
+
+  function metricAction(e) {
+    const b = e.target.closest("button[data-act]");
+    if (!b) return;
+    const scopeKeys = METRICS.filter((m) => b.dataset.scope === "*" || m.group === b.dataset.scope).map((m) => m.key);
+    const keys = new Set(state.metrics);
+    scopeKeys.forEach((k) => (b.dataset.act === "all" ? keys.add(k) : keys.delete(k)));
+    setMetrics([...keys]);
   }
 
   function setMetrics(keys) {
@@ -483,15 +500,8 @@
     if (e.target.checked) keys.add(e.target.value); else keys.delete(e.target.value);
     setMetrics([...keys]);
   });
-  $("metric-groups").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-group]");
-    if (!b) return;
-    const groupKeys = METRICS.filter((m) => m.group === b.dataset.group).map((m) => m.key);
-    const allOn = groupKeys.every((k) => state.metrics.includes(k));
-    const keys = new Set(state.metrics);
-    groupKeys.forEach((k) => (allOn ? keys.delete(k) : keys.add(k)));
-    setMetrics([...keys]);
-  });
+  $("metric-groups").addEventListener("click", metricAction);
+  $("metrics-actions").addEventListener("click", metricAction);
   document.querySelectorAll(".seg").forEach((b) => b.addEventListener("click", () => setKind(b.dataset.kind)));
   $("q").addEventListener("input", updateSuggestions);
   $("q").addEventListener("focus", () => { if ($("q").value) updateSuggestions(); });

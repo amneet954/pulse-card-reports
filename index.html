@@ -6,6 +6,7 @@
   <title>Pulse Card Reports</title>
   <meta name="description" content="Build reports on which Yu-Gi-Oh cards belong to which box sets, for many cards at once.">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="theme.css"><!-- light/dark mode: delete this line, theme.js and #theme-slot to remove -->
 </head>
 <body>
   <header class="top">
@@ -15,14 +16,17 @@
         <h1>Pulse Card Reports</h1>
         <p class="tagline">Which card belongs in which box, for every card at once.</p>
       </div>
-      <span class="version" id="version">v1.64</span>
+      <div class="top-right">
+        <div id="theme-slot"></div><!-- theme toggle (theme.js); remove with theme.css/theme.js -->
+        <span class="version" id="version">v1.64</span>
+      </div>
     </div>
   </header>
 
   <div class="layout">
     <aside class="sidebar panel" aria-labelledby="metrics-title">
       <div class="sidebar-head">
-        <h2 id="metrics-title">Metrics</h2>
+        <div class="metric-group-head"><h2 id="metrics-title">Metrics</h2><span id="metrics-actions"></span></div>
         <p class="hint" id="metrics-hint">Pick at least one metric to run a report.</p>
       </div>
       <form id="metric-groups" autocomplete="off"></form>
@@ -86,5 +90,6 @@
 
   <script src="sample-data.js"></script>
   <script src="app.js"></script>
+  <script src="theme.js"></script><!-- light/dark mode toggle -->
 </body>
 </html>
