@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-16T23:09:50.164Z",
+  "generated_at": "2026-11-16T23:10:58.881Z",
   "source": "YGOPRODeck API v7",
   "schema_version": 2,
-  "cards": 4435,
+  "cards": 4436,
   "monsters": 2798,
   "spells": 893,
-  "traps": 743,
+  "traps": 744,
   "tokens": 1,
   "token_audit": {
     "in_api": 106,
@@ -17,10 +17,6 @@
     {
       "name": "Limited Pack World Championship 2026",
       "printings": 42
-    },
-    {
-      "name": "Yu-Gi-Oh! 5D's Tag Force 5 Promotional Cards",
-      "printings": 4
     },
     {
       "name": "Nike collaboration cards",
@@ -35,6 +31,6 @@
       "printings": 1
     }
   ],
-  "sets": 764,
-  "printings": 20763
+  "sets": 763,
+  "printings": 20769
 }
