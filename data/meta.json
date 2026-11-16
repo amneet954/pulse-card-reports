@@ -1,11 +1,36 @@
 {
-  "generated_at": "2026-11-15T01:52:50.423Z",
+  "generated_at": "2026-11-16T23:07:29.224Z",
   "source": "YGOPRODeck API v7",
   "schema_version": 2,
-  "cards": 1398,
-  "monsters": 852,
-  "spells": 326,
-  "traps": 220,
-  "sets": 461,
-  "printings": 9163
+  "cards": 4435,
+  "monsters": 2798,
+  "spells": 893,
+  "traps": 743,
+  "tokens": 1,
+  "era_end": "Extreme Victory (EXVC), 2011-05-06",
+  "products_in_era": 388,
+  "undated_products": [
+    {
+      "name": "Limited Pack World Championship 2026",
+      "printings": 42
+    },
+    {
+      "name": "Yu-Gi-Oh! 5D's Tag Force 5 Promotional Cards",
+      "printings": 4
+    },
+    {
+      "name": "Nike collaboration cards",
+      "printings": 2
+    },
+    {
+      "name": "Crocs collaboration card",
+      "printings": 1
+    },
+    {
+      "name": "EFootball collaboration cards",
+      "printings": 1
+    }
+  ],
+  "sets": 764,
+  "printings": 20763
 }
