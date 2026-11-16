@@ -111,6 +111,11 @@ const data = {
 
 // 4. Coverage audit: English printings in products the API gives no release date. Those
 //    products can't be placed before or after the cutoff, so they never qualify a card.
+const tokensInApi = all.filter((c) => /Token/i.test(c.type || ""));
+const tokenAudit = {
+  in_api: tokensInApi.length,
+  with_any_english_printing: tokensInApi.filter((c) => (c.card_sets || []).some((p) => isEnglishTCG(p.set_code))).length,
+};
 const undated = new Map();
 for (const c of all) {
   for (const p of (c.card_sets || []).filter((x) => isEnglishTCG(x.set_code))) {
@@ -135,6 +140,7 @@ if (previous === body) {
     spells: outCards.filter((c) => c.card_type === "Spell").length,
     traps: outCards.filter((c) => c.card_type === "Trap").length,
     tokens: outCards.filter((c) => c.card_type === "Token").length,
+    token_audit: tokenAudit,
     era_end: `${eraSet.set_name} (${eraSet.set_code}), ${eraEnd}`,
     products_in_era: scopeSets.length,
     undated_products: [...undated].sort((a, b) => b[1] - a[1]).map(([name, printings]) => ({ name, printings })),
