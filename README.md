@@ -32,8 +32,8 @@ search.
 
 | Requirement | In the app |
 | --- | --- |
-| Cover the early era | 1,398 Monster (including Fusion and Ritual), Spell and Trap cards from the first 11 booster sets (2002–2004) and their side products, with every printing to date |
-| English TCG products | English-language TCG printings only (North American, European/Australian English and EN codes) |
+| Cover the original era | 4,436 Monster (incl. Fusion, Ritual, Synchro), Spell, Trap and Token cards from every English TCG product through Extreme Victory (2002–2011), with every printing to date |
+| English TCG products | English-language TCG printings only, from core sets, side sets, decks, tins and promos through Extreme Victory |
 | Related data model | Cards and box sets are separate tables joined by printings (`data/catalog.json`) |
 | Metrics sidebar | Pick columns from two groups: **Card** (name, type, attribute, description, rarity, set code) and **Box set** (name, set code, box year) |
 | Optional filter, cards or box sets | One box with a Card / Box set toggle and type-ahead ("red eyes" finds Red-Eyes Black Dragon). Leave it empty to report on the whole catalog |

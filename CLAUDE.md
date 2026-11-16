@@ -37,16 +37,24 @@ at runtime. `scripts/build-data.mjs` (run weekly by `.github/workflows/refresh-d
 `cardsets.php` and `cardinfo.php` once and writes `data/catalog.json` (schema v2) as **three related
 tables**:
 
-- `cards`: `{ id, name, card_type (Monster|Spell|Trap), subtype, attribute (null for Spell/Trap), desc }`
-- `sets`: `{ id, set_name, set_code (e.g. MFC), date, in_scope, booster }`
+- `cards`: `{ id, name, card_type (Monster|Spell|Trap|Token), subtype, attribute (null for Spell/Trap), desc }`
+- `sets`: `{ id, set_name, set_code (e.g. MFC), date, in_scope }`
 - `printings`: `{ card_id, set_id, code (e.g. MFC-000), rarity }` — joins a card to a box set
 
-**v1 data scope:** every Monster (including Fusion and Ritual), Spell and Trap card printed in the first 11 TCG booster sets (LOB, MRD, SRL, PSV, LON,
-LOD, PGD, MFC, DCR, IOC, AST) or in any side product released on or before AST's date, with all of
-its printings to date. **English-language TCG printings only** (codes like LOB-001, LOB-E001,
-LOB-A005, LOB-EN001); OCG and non-English TCG printings are excluded. Tokens and Skill Cards are
-excluded because no English printings of either exist in this era (English Tokens start in 2008;
-Skill Cards belong to Speed Duel, from 2018-19).
+**v1 data scope (since v1.66):** every English TCG Monster (including Fusion, Ritual and Synchro),
+Spell, Trap and **Token** card printed in any product released on or before **Extreme Victory (EXVC,
+TCG release 2011-05-06)**: core booster sets, side sets, starter / structure decks, tins, tournament
+packs and promos. Each card keeps all of its English printings to date. EXVC is the last set before
+Xyz monsters; Generation Force and the 2011 tins come after it and are out. **English-language TCG
+printings only** (codes like LOB-001, LOB-E001, LOB-A005, LOB-EN001); OCG and non-English printings
+are excluded. Skill Cards (Speed Duel) are excluded. Set names are matched case-insensitively
+because the API sometimes lists one product under two capitalizations.
+
+**Known data gaps (from the coverage audit in `data/meta.json`):**
+- **Tokens:** YGOPRODeck lists 106 Tokens but only 18 have any English printing, and only 1
+  (Sheep Token) falls inside the scope. The English Token Packs of 2008 aren't in the source.
+- **Undated products:** printings in products the API gives no release date can't be placed
+  before or after the cutoff. Today these are all post-era (2026 promos, brand collaborations).
 
 Rules:
 - Do **not** use the `tcgplayer_data` parameter: YGOPRODeck says it cannot guarantee set names and
@@ -56,13 +64,14 @@ Rules:
 
 ## Must have (version 1)
 
-1. **Data coverage:** the v1 data scope above (early-era Monster, Fusion, Ritual, Spell and Trap cards, every printing to date).
-2. **English-language TCG products only**, from the era of the first 11 booster sets and the side
-   products released in that period.
+1. **Data coverage:** the v1 data scope above: Monster (Fusion, Ritual, Synchro), Spell, Trap and
+   Token cards from every English TCG product through Extreme Victory, every printing to date.
+2. **English-language TCG products only**, from the start of the TCG through Extreme Victory
+   (May 2011): core sets, side sets, decks, tins and promos.
 3. **Related data model:** cards and box sets are separate tables joined by printings, so a card
    search finds every box set it's in and a box set search finds every card in it.
 4. **Metrics sidebar** with two groups; ticked metrics become the report's columns:
-   - **Card:** Card name, Card type (Monster/Spell/Trap), Attribute, Card description, Card rarity,
+   - **Card:** Card name, Card type (Monster/Spell/Trap/Token), Attribute, Card description, Card rarity,
      Card set code (the printing, e.g. MFC-000)
    - **Box set:** Box name, Box set code (e.g. MFC), Box year
    - **MVP report:** the core report Pulse is built around uses six metrics: Card name, Card type,
@@ -96,9 +105,9 @@ Rules:
   matches a catalog rarity exactly (any case) or by a unique prefix ("secret" → Secret Rare);
   ambiguous text lists the options. The filter applies on Run (part of the rerun warning), stays
   applied when the Box set toggle is selected (shown as a note), and Clear all resets it.
-- Full, up-to-date catalog: every set and every card, including cards first released in later
-  years (e.g. 2022 or 2026). When building it, decide whether to include Tokens (English printings
-  from 2008) and Skill Cards (Speed Duel).
+- Full, up-to-date catalog: every set and every card, including cards first released after
+  Extreme Victory (the Xyz era onward, e.g. 2022 or 2026). Decide whether to include Skill Cards
+  (Speed Duel). Tokens are already in scope.
 
 ## Could have
 - OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
@@ -130,7 +139,7 @@ Rules:
 ## Versioning
 - Bump `VERSION` in `app.js` and add a `CHANGELOG.md` entry (what changed, why, what was left out)
   for every release. **The product owner sets version numbers:** stay on the current version
-  (v1.65) and record changes as hotfixes under it until told to move to the next one.
+  (v1.66) and record changes as hotfixes under it until told to move to the next one.
 - Commit messages explain what changed and why, in the same terms as the changelog.
 
 ## Technical constraints

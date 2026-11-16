@@ -1,4 +1,4 @@
-// Pulse Card Reports v1.65 — see CLAUDE.md for scope and CHANGELOG.md for history.
+// Pulse Card Reports v1.66 — see CLAUDE.md for scope and CHANGELOG.md for history.
 //
 // Data model (data/catalog.json, schema v2) works like three related tables:
 //   cards     — one row per card
@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.65";
+  const VERSION = "1.66";
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row

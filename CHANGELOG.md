@@ -3,6 +3,35 @@
 Every release of Pulse Card Reports, newest first. Each entry says what changed, why
 (the product reason), and what was deliberately left out. Commit messages carry the same detail.
 
+## v1.66 — 2026-11-16
+
+**Theme:** cover the whole original era, through Extreme Victory.
+
+### Changed
+- **Data scope expanded (Must have).** v1 now covers every English TCG product released on or
+  before **Extreme Victory (May 2011)**: core sets, side sets, starter and structure decks, tins,
+  tournament packs and promos. Before, it stopped at Ancient Sanctuary (June 2004). Extreme
+  Victory is the last set before Xyz monsters, so Generation Force and the 2011 tins are out.
+  Coverage went from 1,398 to **4,436 cards** (2,798 Monsters incl. Fusion, Ritual and Synchro;
+  893 Spells; 744 Traps; 1 Token), **763 box sets** and **20,769 printings**.
+  New in reach: Vorse Raider (Collectible Tins 2005), Stardust Dragon (Collectible Tins 2008),
+  Shooting Star Dragon and Red Nova Dragon (Collectible Tins 2010), and sets like Light of
+  Destruction (2008).
+- **Tokens are a fourth card type** (Monster / Spell / Trap / Token).
+- Footer coverage note updated.
+
+### Data quality fixes found in the coverage audit
+- **Duplicate product names.** The source lists some products twice with different
+  capitalization, only one dated ("Tag Force 5 promotional cards" vs "... Promotional Cards").
+  Set names are now matched case-insensitively, so those printings keep their release date.
+- **Audit in `data/meta.json`:** token counts and products with no release date.
+
+### Known gaps (documented, not fixable from this source)
+- **Tokens:** the source lists 106 Tokens, but only 18 have any English printing and only 1
+  (Sheep Token) is in the covered era. The 2008 English Token Packs aren't in the source.
+- **Undated products** can't be placed in time; today all of them are post-era (2026 promos and
+  brand collaborations), so nothing in the era is affected.
+
 ## v1.65 — 2026-11-15
 
 **Theme:** a release that rolls up the v1.64 hotfixes and makes the filter set its own base
