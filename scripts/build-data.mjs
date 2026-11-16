@@ -127,25 +127,30 @@ await mkdir("data", { recursive: true });
 const body = JSON.stringify(data);
 let previous = "";
 try { previous = await readFile("data/catalog.json", "utf8"); } catch {}
-if (previous === body) {
-  console.log("No change in card data.");
-} else {
-  await writeFile("data/catalog.json", body);
-  await writeFile("data/meta.json", JSON.stringify({
-    generated_at: new Date().toISOString(),
-    source: "YGOPRODeck API v7",
-    schema_version: 2,
-    cards: outCards.length,
-    monsters: outCards.filter((c) => c.card_type === "Monster").length,
-    spells: outCards.filter((c) => c.card_type === "Spell").length,
-    traps: outCards.filter((c) => c.card_type === "Trap").length,
-    tokens: outCards.filter((c) => c.card_type === "Token").length,
-    token_audit: tokenAudit,
-    era_end: `${eraSet.set_name} (${eraSet.set_code}), ${eraEnd}`,
-    products_in_era: scopeSets.length,
-    undated_products: [...undated].sort((a, b) => b[1] - a[1]).map(([name, printings]) => ({ name, printings })),
-    sets: outSets.length,
-    printings: outPrintings.length,
-  }, null, 2) + "\n");
+const meta = {
+  source: "YGOPRODeck API v7",
+  schema_version: 2,
+  cards: outCards.length,
+  monsters: outCards.filter((c) => c.card_type === "Monster").length,
+  spells: outCards.filter((c) => c.card_type === "Spell").length,
+  traps: outCards.filter((c) => c.card_type === "Trap").length,
+  tokens: outCards.filter((c) => c.card_type === "Token").length,
+  token_audit: tokenAudit,
+  era_end: `${eraSet.set_name} (${eraSet.set_code}), ${eraEnd}`,
+  products_in_era: scopeSets.length,
+  undated_products: [...undated].sort((a, b) => b[1] - a[1]).map(([name, printings]) => ({ name, printings })),
+  sets: outSets.length,
+  printings: outPrintings.length,
+};
+let previousMeta = {};
+try { previousMeta = JSON.parse(await readFile("data/meta.json", "utf8")); } catch {}
+const { generated_at: _ignored, ...previousMetaBody } = previousMeta;
+const metaChanged = JSON.stringify(previousMetaBody) !== JSON.stringify(meta);
+
+if (previous !== body) await writeFile("data/catalog.json", body);
+if (previous !== body || metaChanged) {
+  await writeFile("data/meta.json", JSON.stringify({ generated_at: new Date().toISOString(), ...meta }, null, 2) + "\n");
   console.log(`Wrote ${outCards.length} cards, ${outSets.length} sets, ${outPrintings.length} printings (era ends ${eraEnd}).`);
+} else {
+  console.log("No change in card data.");
 }
