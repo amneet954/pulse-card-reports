@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-16T23:07:29.224Z",
+  "generated_at": "2026-11-16T23:09:50.164Z",
   "source": "YGOPRODeck API v7",
   "schema_version": 2,
   "cards": 4435,
@@ -7,6 +7,10 @@
   "spells": 893,
   "traps": 743,
   "tokens": 1,
+  "token_audit": {
+    "in_api": 106,
+    "with_any_english_printing": 18
+  },
   "era_end": "Extreme Victory (EXVC), 2011-05-06",
   "products_in_era": 388,
   "undated_products": [
