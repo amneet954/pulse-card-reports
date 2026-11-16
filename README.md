@@ -39,6 +39,7 @@ search.
 | Optional filter, cards or box sets | One box with a Card / Box set toggle and type-ahead ("red eyes" finds Red-Eyes Black Dragon). Leave it empty to report on the whole catalog |
 | Filter by several at once | Add up to 20 cards and box sets, or paste a list |
 | Card rarity filter (Should have) | "Card rarity is / is not" with typed, case-insensitive values as chips (e.g. is Common, Ultra Rare) |
+| Box sets with all of these cards (Could have) | Pick 2+ cards and switch on "Only box sets with all of these cards" to see which sets contain every one, with card name, rarity, box name and box year locked in |
 | One report table | Each row is a printing reduced to the chosen metrics; duplicate rows merge |
 | Work with the table | Sort any column up or down. By design, the screen shows at most 50 rows; the CSV export has them all |
 | MVP report and Try an example | The core report uses six metrics: card name, card type, rarity, set code, box name and box year. Try an example runs it for Quarter Century Stampede |

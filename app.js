@@ -132,11 +132,23 @@
     const seen = new Set();
     const out = [];
     const add = (p) => { if (!seen.has(p)) { seen.add(p); out.push(p); } };
-    if (!items.length) index.printings.forEach(add);
-    for (const it of items) {
-      if (it.missing) continue;
-      const list = it.kind === "card" ? index.byCard.get(it.id) : index.bySet.get(it.id);
-      (list || []).forEach(add);
+    const cards = items.filter((i) => i.kind === "card" && !i.missing);
+    if (opts && opts.together && cards.length >= 2) {
+      // "Box sets with all of these cards": keep only sets that contain every selected card,
+      // then list those cards' printings in those sets.
+      let shared = null;
+      for (const c of cards) {
+        const ids = new Set((index.byCard.get(c.id) || []).map((p) => p.set.id));
+        shared = shared ? new Set([...shared].filter((id) => ids.has(id))) : ids;
+      }
+      for (const c of cards) (index.byCard.get(c.id) || []).forEach((p) => { if (shared.has(p.set.id)) add(p); });
+    } else {
+      if (!items.length) index.printings.forEach(add);
+      for (const it of items) {
+        if (it.missing) continue;
+        const list = it.kind === "card" ? index.byCard.get(it.id) : index.bySet.get(it.id);
+        (list || []).forEach(add);
+      }
     }
     const rf = opts && opts.rarity;
     const filtered = rf && rf.values && rf.values.length
@@ -153,8 +165,20 @@
   }
 
   // Project printings onto the chosen metrics and drop duplicate rows.
+  // Column order. Normally the sidebar order. With "box sets with all of these cards" on:
+  // Card name, Card rarity, other card metrics, Box name, Box year, other box metrics.
+  const TOGETHER_LOCKED = ["card_name", "rarity", "box_name", "box_year"];
+  function orderedMetrics(metricKeys, together) {
+    const picked = METRICS.filter((m) => metricKeys.includes(m.key));
+    if (!together) return picked;
+    const byKey = (k) => picked.find((m) => m.key === k);
+    const rest = (group) => picked.filter((m) => m.group === group && !TOGETHER_LOCKED.includes(m.key));
+    return [byKey("card_name"), byKey("rarity"), ...rest("Card"), byKey("box_name"), byKey("box_year"), ...rest("Box set")]
+      .filter(Boolean);
+  }
+
   function buildReport(index, items, metricKeys, opts) {
-    const columns = METRICS.filter((m) => metricKeys.includes(m.key));
+    const columns = orderedMetrics(metricKeys, opts && opts.together);
     const printings = collectPrintings(index, items, opts);
     const seen = new Set();
     const rows = [];
@@ -171,8 +195,8 @@
   // What the screen shows: the metrics ticked now. A metric ticked after the report ran has no
   // data yet, so its cells show "--" until the report is run again.
   const PENDING = "--";
-  function reportView(report, metricKeys) {
-    const columns = METRICS.filter((m) => metricKeys.includes(m.key)).map((m) => {
+  function reportView(report, metricKeys, together) {
+    const columns = orderedMetrics(metricKeys, together).map((m) => {
       const src = report.columns.findIndex((c) => c.key === m.key);
       return Object.assign({}, m, { src, pending: src < 0 });
     });
@@ -222,7 +246,7 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, reportView, sortRows, toCSV, sampleToData, allRarities, matchRarity };
+    collectPrintings, buildReport, reportView, orderedMetrics, TOGETHER_LOCKED, sortRows, toCSV, sampleToData, allRarities, matchRarity };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
@@ -230,8 +254,8 @@
   const $ = (id) => document.getElementById(id);
   // Nothing is saved between visits: a refresh starts with no metrics, no search and no report.
   const state = { kind: "card", items: [], index: null, metrics: [], report: null, ms: 0, active: -1, options: [],
-    sort: { key: null, dir: null }, lastRun: null, rarity: { op: "is", values: [] } };
-  const currentView = () => reportView(state.report, state.metrics);
+    sort: { key: null, dir: null }, lastRun: null, rarity: { op: "is", values: [] }, together: false };
+  const currentView = () => reportView(state.report, state.metrics, state.together);
   const sortedRows = (view) => sortRows(view, state.sort.key, state.sort.dir);
 
   const EXAMPLE = {
@@ -283,8 +307,12 @@
       const ms = METRICS.filter((m) => m.group === g);
       return `<fieldset class="metric-group"><div class="metric-group-head"><legend>${esc(g)}</legend>` +
         controls(g, ms.map((m) => m.key)) + `</div>` +
-        ms.map((m) => `<label class="metric"><input type="checkbox" autocomplete="off" value="${m.key}"${state.metrics.includes(m.key) ? " checked" : ""}>` +
-          `<span>${esc(m.label)}</span></label>`).join("") + `</fieldset>`;
+        ms.map((m) => {
+          const locked = state.together && TOGETHER_LOCKED.includes(m.key);
+          return `<label class="metric${locked ? " locked" : ""}"><input type="checkbox" autocomplete="off" value="${m.key}"` +
+            `${state.metrics.includes(m.key) ? " checked" : ""}${locked ? " disabled" : ""}>` +
+            `<span>${esc(m.label)}</span>${locked ? `<span class="lock-tag">Locked</span>` : ""}</label>`;
+        }).join("") + `</fieldset>`;
     }).join("");
     updateRunState();
   }
@@ -295,11 +323,12 @@
     const scopeKeys = METRICS.filter((m) => b.dataset.scope === "*" || m.group === b.dataset.scope).map((m) => m.key);
     const keys = new Set(state.metrics);
     scopeKeys.forEach((k) => (b.dataset.act === "all" ? keys.add(k) : keys.delete(k)));
-    setMetrics([...keys]);
+    setMetrics([...keys]); // locked metrics are re-added by setMetrics
   }
 
   function setMetrics(keys) {
-    // keep sidebar order
+    // keep sidebar order; locked metrics always stay ticked while the together filter is on
+    if (state.together) keys = keys.concat(TOGETHER_LOCKED);
     state.metrics = METRICS.map((m) => m.key).filter((k) => keys.includes(k));
     renderMetrics();
     if (state.report) {
@@ -342,6 +371,7 @@
   // Clears the filter (chips and Card rarity) and the report. Used by Clear all and the toggle.
   function resetFilterAndReport() {
     state.items = [];
+    if (state.together) { state.together = false; renderMetrics(); }
     state.rarity = { op: "is", values: [] };
     $("rarity-input").value = "";
     $("rarity-msg").hidden = true;
@@ -451,6 +481,27 @@
     }
   }
 
+  // --- "Box sets with all of these cards" (Could have) ---
+  // Card mode only, with 2+ cards. Turning it on locks Card name, Card rarity, Box name and
+  // Box year. It switches off if fewer than 2 cards remain, and on Clear all / toggle switch.
+  function cardCount() { return state.items.filter((i) => i.kind === "card" && !i.missing).length; }
+  function setTogether(on) {
+    if (state.together === on) { renderTogether(); return; }
+    state.together = on;
+    renderTogether();
+    setMetrics(on ? state.metrics.concat(TOGETHER_LOCKED) : state.metrics); // re-render lock state
+    updateStale();
+  }
+  function renderTogether() {
+    const available = state.kind === "card" && cardCount() >= 2;
+    if (!available && state.together) { state.together = false; renderMetrics(); }
+    $("together-row").hidden = !available;
+    const sw = $("together");
+    sw.setAttribute("aria-checked", state.together ? "true" : "false");
+    sw.classList.toggle("on", state.together);
+    $("lock-note").hidden = !state.together;
+  }
+
   function renderChips() {
     $("chips").innerHTML = state.items.map((it, i) => {
       const label = it.kind === "set" && it.set_code ? `${it.name} (${it.set_code})` : it.name;
@@ -460,6 +511,7 @@
     $("clear").hidden = state.items.length === 0 && !state.rarity.values.length && !state.report;
     $("hint").hidden = state.items.length < MAX_ITEMS;
     $("hint").textContent = `You've reached the limit of ${MAX_ITEMS}. Run the report or remove some.`;
+    renderTogether();
     updateStale(); // the report itself only changes when it runs again
   }
 
@@ -486,7 +538,8 @@
   // After a report runs, changing the filter or the metrics doesn't change the data shown.
   // A warning above the filter asks for a re-run instead.
   const filterKey = () => state.items.map((i) => `${i.kind}:${i.name}`).join("|") +
-    (state.rarity.values.length ? `#rarity:${state.rarity.op}:${state.rarity.values.join(",")}` : "");
+    (state.rarity.values.length ? `#rarity:${state.rarity.op}:${state.rarity.values.join(",")}` : "") +
+    (state.together ? "#together" : "");
   function updateStale() {
     const stale = !!state.report && !!state.lastRun &&
       (state.lastRun.filter !== filterKey() || state.lastRun.metrics !== state.metrics.join("|"));
@@ -528,7 +581,7 @@
             const c = view.columns[i];
             return `<td class="${c.pending ? "pending-cell" : ""}${c.mono ? " code" : ""}${c.long ? " long" : ""}">${esc(v)}</td>`;
           }).join("")}</tr>`).join("")
-        : `<tr><td class="miss" colspan="${cols}">No rows. Add a card or box set that's in the catalog.</td></tr>`}</tbody>`;
+        : `<tr><td class="miss" colspan="${cols}">No results found.</td></tr>`}</tbody>`;
 
     const t = $("truncated");
     t.hidden = all.length <= MAX_ROWS_SHOWN;
@@ -542,7 +595,7 @@
   function rebuild(keys) {
     const t0 = performance.now();
     state.report = buildReport(state.index, state.items, keys || state.metrics,
-      { rarity: { op: state.rarity.op, values: state.rarity.values.slice() } });
+      { rarity: { op: state.rarity.op, values: state.rarity.values.slice() }, together: state.together });
     state.ms = performance.now() - t0;
     state.lastRun = { filter: filterKey(), metrics: state.metrics.join("|"), items: state.items.slice() };
     if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
@@ -646,6 +699,7 @@
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();
     state.items = [];
+    state.together = false;
     state.rarity = { op: "is", values: [] };
     renderRarity();
     EXAMPLE.items.forEach((x) => addItem(resolve(index, x.kind, x.text)));
@@ -653,6 +707,7 @@
     run();
   });
   $("search-form").addEventListener("submit", run);
+  $("together").addEventListener("click", () => setTogether(!state.together));
   $("rarity-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); addRarity(); }
   });

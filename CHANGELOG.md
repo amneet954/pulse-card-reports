@@ -37,6 +37,16 @@ metrics. Significant changes:
   the report have been conducted. Please rerun the reporting again." The second note inside the
   report panel (about "--" columns) is removed; new columns still show "--" until the re-run.
 
+- **Box sets with all of these cards (Could have, built).** With 2+ cards in the filter, a
+  pill switch "Only box sets with all of these cards" returns only box sets containing every
+  selected card. Example: Dark Magician + Blue-Eyes White Dragon + Red-Eyes Black Dragon = 17 box
+  sets, including Legend of Blue Eyes White Dragon and both Quarter Century sets. Turning it on
+  locks Card name, Card rarity, Box name and Box year (ticked, can't be unticked, "Locked" tag) and
+  shows a note saying so; columns run Card name, Card rarity, then Box name, Box year. It turns off
+  with fewer than 2 cards, Clear all, Try an example or switching to Box set.
+- **"No results found."** is now the message for any report that comes back empty.
+- PRD: new Could have for partial matches (sets with some of the selected cards).
+
 ### Also in v1.64 hotfixes (rolled into this release)
 - Select all / Clear all for metrics; the "Filter:" line removed from the report header;
   the 50-row screen limit documented as a deliberate design limitation.

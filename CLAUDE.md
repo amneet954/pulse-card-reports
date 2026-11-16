@@ -77,6 +77,7 @@ Rules:
 6. Filter by **several cards or box sets at once** (up to 20; pasting a list works).
 7. **One report table:** each row is a printing projected onto the chosen metrics; identical rows
    are merged.
+   - **Empty results:** when a report finds nothing, the table says "No results found."
    - **Sortable columns:** a sort icon on every header toggles ascending / descending (natural sort
      for years and set codes; blanks last).
    - **50-row screen limit (deliberate design limitation):** any report shown in the UI, including
@@ -103,6 +104,17 @@ Rules:
 - OCG products and non-English printings (Japanese, Asian-English, French, German, Italian, Spanish, Portuguese)
 - Card and box prices (current market value from `set_price` / `card_prices`)
 - Search-demand analytics (how often a card, set and rarity were requested)
+- **Box sets with all of these cards** (built in v1.65 hotfix): in Card mode with 2+ cards, a
+  pill-style on/off switch, "Only box sets with all of these cards". It returns only box sets
+  that contain every selected card (Monsters, Spells and Traps), listing those cards' printings
+  there. Turning it on shows "This filter locks the following metrics to be run on the report:
+  Card name, Card rarity, Box name, Box year." Those four are ticked and can't be unticked while
+  it's on; other metrics can be added. Column order: Card name, Card rarity, other card metrics,
+  Box name, Box year, other box metrics. The Card rarity filter still applies to the rows. It
+  switches off if fewer than 2 cards remain, on Clear all, on Try an example and when switching to
+  Box set. No grouping of rows yet.
+- Partial matches for the above: box sets that contain some of the selected cards (e.g. 3 of 4),
+  showing how many match.
 - "Try an example" button, to help new users get started (built in v1.64: runs the MVP report —
   Card name, Card type, Card rarity, Card set code, Box name, Box year — filtered to Quarter
   Century Stampede)

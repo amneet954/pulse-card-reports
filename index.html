@@ -52,6 +52,13 @@
 
           <div class="chips" id="chips" aria-label="Filter values"></div>
 
+          <div class="together-row" id="together-row" hidden>
+            <button type="button" class="switch" id="together" role="switch" aria-checked="false"
+              aria-labelledby="together-label"><span class="knob" aria-hidden="true"></span></button>
+            <span id="together-label">Only box sets with all of these cards</span>
+          </div>
+          <p class="lock-note" id="lock-note" hidden>This filter locks the following metrics to be run on the report: Card name, Card rarity, Box name, Box year.</p>
+
           <div class="rarity-filter" id="rarity-filter">
             <span class="label" id="rarity-label">Card rarity</span>
             <div class="rarity-row">
