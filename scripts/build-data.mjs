@@ -38,6 +38,16 @@ async function getJSON(url) {
 
 const sets = await getJSON(`${API}/cardsets.php`);
 const setByName = new Map(sets.map((s) => [s.set_name, s]));
+// The API sometimes lists one product under two capitalizations (e.g. "... promotional cards"
+// and "... Promotional Cards"), only one of them dated. Match names case-insensitively and
+// prefer the dated entry, so printings don't lose their release date.
+const setByLower = new Map();
+for (const st of sets) {
+  const k = st.set_name.toLowerCase();
+  const prev = setByLower.get(k);
+  if (!prev || (!prev.tcg_date && st.tcg_date)) setByLower.set(k, st);
+}
+const canonicalSet = (name) => setByLower.get(String(name).toLowerCase()) || setByName.get(name) || null;
 
 // 1. The era runs up to Extreme Victory's TCG release date.
 const eraSet = sets.find((s) => String(s.set_code).toUpperCase() === ERA_END_SET_CODE && s.tcg_date);
@@ -51,7 +61,8 @@ const all = (await getJSON(`${API}/cardinfo.php`)).data;
 const kept = [];
 for (const c of all) {
   if (!/Monster|Spell|Trap|Token/i.test(c.type || "") || /Skill/i.test(c.type || "")) continue;
-  const printings = (c.card_sets || []).filter((p) => isEnglishTCG(p.set_code));
+  const printings = (c.card_sets || []).filter((p) => isEnglishTCG(p.set_code))
+    .map((p) => Object.assign({}, p, { set_name: canonicalSet(p.set_name)?.set_name || p.set_name }));
   if (!printings.some((p) => scopeNames.has(p.set_name))) continue;
   kept.push({ c, printings });
 }
@@ -76,7 +87,7 @@ const setIdByName = new Map();
 const outSets = [];
 function setIdFor(name, printingCode) {
   if (setIdByName.has(name)) return setIdByName.get(name);
-  const s = setByName.get(name);
+  const s = canonicalSet(name);
   const id = outSets.length;
   outSets.push({
     id,
@@ -119,7 +130,7 @@ const tokenAudit = {
 const undated = new Map();
 for (const c of all) {
   for (const p of (c.card_sets || []).filter((x) => isEnglishTCG(x.set_code))) {
-    if (!setByName.get(p.set_name)?.tcg_date) undated.set(p.set_name, (undated.get(p.set_name) || 0) + 1);
+    if (!canonicalSet(p.set_name)?.tcg_date) undated.set(p.set_name, (undated.get(p.set_name) || 0) + 1);
   }
 }
 
