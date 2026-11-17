@@ -20,6 +20,19 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Tokens are a fourth card type** (Monster / Spell / Trap / Token).
 - Footer coverage note updated.
 
+### Hotfix (still v1.66)
+- **The grouped filter now groups.** With "Only box sets with all of these cards" on, the report
+  has **one row per box set and rarity**, and **Card name is an array of strings** listing the
+  cards printed there at that rarity, alphabetically: e.g. Legend of Blue Eyes White Dragon,
+  Ultra Rare, ["Blue-Eyes White Dragon", "Dark Magician"]. Dark Magician + Blue-Eyes White Dragon
+  go from 66 individual rows to 37 grouped rows; 8 rows list one card (the set has both cards,
+  but not at that rarity), which is expected. Columns: Card name, Card rarity, Box name,
+  Box year (+ Box set code if ticked). CSV exports the names as a JSON array.
+- **Per-card metrics aren't available while grouped:** Card type, Attribute, Card description
+  and Card set code are unticked, greyed out and tagged "N/A". The note under the switch says so.
+- **Toggling the switch clears the current report** (on or off), so a regular report and a
+  grouped report never mix. Run again for the new report.
+
 ### UAT items
 - **UAT-1 (corrected): duplicate product names dropped release dates.**
   - *Found:* during user acceptance testing of the expanded scope, the coverage audit showed

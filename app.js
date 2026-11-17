@@ -168,16 +168,45 @@
   // Column order. Normally the sidebar order. With "box sets with all of these cards" on:
   // Card name, Card rarity, other card metrics, Box name, Box year, other box metrics.
   const TOGETHER_LOCKED = ["card_name", "rarity", "box_name", "box_year"];
+  // Per-card fields can't sit on a grouped row (one row holds several cards), so they're
+  // unavailable while the grouped filter is on.
+  const TOGETHER_UNAVAILABLE = ["card_type", "attribute", "card_desc", "print_code"];
   function orderedMetrics(metricKeys, together) {
     const picked = METRICS.filter((m) => metricKeys.includes(m.key));
     if (!together) return picked;
     const byKey = (k) => picked.find((m) => m.key === k);
-    const rest = (group) => picked.filter((m) => m.group === group && !TOGETHER_LOCKED.includes(m.key));
-    return [byKey("card_name"), byKey("rarity"), ...rest("Card"), byKey("box_name"), byKey("box_year"), ...rest("Box set")]
+    return [byKey("card_name"), byKey("rarity"), byKey("box_name"), byKey("box_year"), byKey("box_code")]
       .filter(Boolean);
   }
 
+  // Grouped report: one row per box set + rarity, with the card names (alphabetical) as an array.
+  function groupedReport(index, items, metricKeys, opts) {
+    const columns = orderedMetrics(metricKeys, true);
+    const printings = collectPrintings(index, items, opts);
+    const groups = new Map();
+    for (const p of printings) {
+      const k = p.set.id + "\u0001" + p.rarity;
+      if (!groups.has(k)) groups.set(k, { set: p.set, rarity: p.rarity, names: new Set() });
+      groups.get(k).names.add(p.card.name);
+    }
+    const rows = [...groups.values()]
+      .sort((a, b) => (a.set.date || "9999").localeCompare(b.set.date || "9999") ||
+        a.set.set_name.localeCompare(b.set.set_name) || a.rarity.localeCompare(b.rarity))
+      .map((g) => columns.map((c) => {
+        if (c.key === "card_name") return [...g.names].sort((a, b) => a.localeCompare(b));
+        if (c.key === "rarity") return g.rarity;
+        if (c.key === "box_name") return g.set.set_name;
+        if (c.key === "box_year") return year(g.set.date) || "—";
+        if (c.key === "box_code") return g.set.set_code || "";
+        return "";
+      }));
+    return { columns, rows, printings: printings.length, missing: items.filter((i) => i.missing), grouped: true };
+  }
+
   function buildReport(index, items, metricKeys, opts) {
+    if (opts && opts.together && items.filter((i) => i.kind === "card" && !i.missing).length >= 2) {
+      return groupedReport(index, items, metricKeys, opts);
+    }
     const columns = orderedMetrics(metricKeys, opts && opts.together);
     const printings = collectPrintings(index, items, opts);
     const seen = new Set();
@@ -212,7 +241,9 @@
     const sign = dir === "desc" ? -1 : 1;
     const empty = (v) => v === "" || v === "—" || v === PENDING || v == null;
     return report.rows.slice().sort((a, b) => {
-      const x = a[i], y = b[i];
+      let x = a[i], y = b[i];
+      if (Array.isArray(x)) x = x.join(", ");
+      if (Array.isArray(y)) y = y.join(", ");
       if (empty(x) || empty(y)) return empty(x) === empty(y) ? 0 : empty(x) ? 1 : -1;
       return sign * String(x).localeCompare(String(y), undefined, { numeric: true, sensitivity: "base" });
     });
@@ -221,7 +252,8 @@
   // ---------- CSV ----------
 
   function csvCell(v) {
-    const s = v == null ? "" : String(v);
+    // Grouped card names are an array of strings; export them as a JSON array.
+    const s = v == null ? "" : Array.isArray(v) ? JSON.stringify(v) : String(v);
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
@@ -246,7 +278,7 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, reportView, orderedMetrics, TOGETHER_LOCKED, sortRows, toCSV, sampleToData, allRarities, matchRarity };
+    collectPrintings, buildReport, groupedReport, reportView, orderedMetrics, TOGETHER_LOCKED, TOGETHER_UNAVAILABLE, sortRows, toCSV, sampleToData, allRarities, matchRarity };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
@@ -309,9 +341,11 @@
         controls(g, ms.map((m) => m.key)) + `</div>` +
         ms.map((m) => {
           const locked = state.together && TOGETHER_LOCKED.includes(m.key);
-          return `<label class="metric${locked ? " locked" : ""}"><input type="checkbox" autocomplete="off" value="${m.key}"` +
-            `${state.metrics.includes(m.key) ? " checked" : ""}${locked ? " disabled" : ""}>` +
-            `<span>${esc(m.label)}</span>${locked ? `<span class="lock-tag">Locked</span>` : ""}</label>`;
+          const off = state.together && TOGETHER_UNAVAILABLE.includes(m.key);
+          const tag = locked ? `<span class="lock-tag">Locked</span>` : off ? `<span class="lock-tag off" title="Not available while grouping">N/A</span>` : "";
+          return `<label class="metric${locked || off ? " locked" : ""}${off ? " off" : ""}"><input type="checkbox" autocomplete="off" value="${m.key}"` +
+            `${state.metrics.includes(m.key) ? " checked" : ""}${locked || off ? " disabled" : ""}>` +
+            `<span>${esc(m.label)}</span>${tag}</label>`;
         }).join("") + `</fieldset>`;
     }).join("");
     updateRunState();
@@ -328,7 +362,7 @@
 
   function setMetrics(keys) {
     // keep sidebar order; locked metrics always stay ticked while the together filter is on
-    if (state.together) keys = keys.concat(TOGETHER_LOCKED);
+    if (state.together) keys = keys.concat(TOGETHER_LOCKED).filter((k) => !TOGETHER_UNAVAILABLE.includes(k));
     state.metrics = METRICS.map((m) => m.key).filter((k) => keys.includes(k));
     renderMetrics();
     if (state.report) {
@@ -488,9 +522,20 @@
   function setTogether(on) {
     if (state.together === on) { renderTogether(); return; }
     state.together = on;
+    clearReport(); // switching between regular and grouped reports starts a fresh report
     renderTogether();
     setMetrics(on ? state.metrics.concat(TOGETHER_LOCKED) : state.metrics); // re-render lock state
     updateStale();
+  }
+  function clearReport() {
+    state.report = null;
+    state.lastRun = null;
+    state.sort = { key: null, dir: null };
+    $("results-panel").hidden = true;
+    $("report").innerHTML = "";
+    $("results-meta").innerHTML = "";
+    $("truncated").hidden = true;
+    $("run").classList.remove("attention");
   }
   function renderTogether() {
     const available = state.kind === "card" && cardCount() >= 2;
@@ -579,7 +624,10 @@
         : shown.length
         ? shown.map((row) => `<tr>${row.map((v, i) => {
             const c = view.columns[i];
-            return `<td class="${c.pending ? "pending-cell" : ""}${c.mono ? " code" : ""}${c.long ? " long" : ""}">${esc(v)}</td>`;
+            const cell = Array.isArray(v)
+              ? `<span class="name-list">${v.map((n) => `<span class="name-item">${esc(n)}</span>`).join("")}</span>`
+              : esc(v);
+            return `<td class="${c.pending ? "pending-cell" : ""}${c.mono ? " code" : ""}${c.long ? " long" : ""}">${cell}</td>`;
           }).join("")}</tr>`).join("")
         : `<tr><td class="miss" colspan="${cols}">No results found.</td></tr>`}</tbody>`;
 

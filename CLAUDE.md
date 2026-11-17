@@ -121,7 +121,12 @@ Rules:
   it's on; other metrics can be added. Column order: Card name, Card rarity, other card metrics,
   Box name, Box year, other box metrics. The Card rarity filter still applies to the rows. It
   switches off if fewer than 2 cards remain, on Clear all, on Try an example and when switching to
-  Box set. No grouping of rows yet.
+  Box set. **Grouped rows (v1.66 hotfix):** one row per box set + rarity; Card name is an array of
+  strings (alphabetical) with the cards printed there at that rarity; a row may list only some of
+  the cards. Columns: Card name, Card rarity, Box name, Box year (+ Box set code if ticked); CSV
+  exports the names as a JSON array. **While grouped, per-card fields are not available:** Card
+  type, Attribute, Card description and Card set code are unticked and disabled ("N/A").
+  Toggling the switch on or off clears the current report.
 - Partial matches for the above: box sets that contain some of the selected cards (e.g. 3 of 4),
   showing how many match.
 - "Try an example" button, to help new users get started (built in v1.64: runs the MVP report —

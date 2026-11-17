@@ -250,3 +250,8 @@ button.primary.attention { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px v
 .metric.locked { cursor: not-allowed; }
 .metric.locked input { opacity: .75; cursor: not-allowed; }
 .lock-tag { margin-left: auto; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--accent-text); }
+
+.name-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.name-item { background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; font-size: 13px; white-space: nowrap; }
+.lock-tag.off { color: var(--muted); }
+.metric.off span:not(.lock-tag) { color: var(--muted); }
