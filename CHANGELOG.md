@@ -20,10 +20,16 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Tokens are a fourth card type** (Monster / Spell / Trap / Token).
 - Footer coverage note updated.
 
-### Data quality fixes found in the coverage audit
-- **Duplicate product names.** The source lists some products twice with different
-  capitalization, only one dated ("Tag Force 5 promotional cards" vs "... Promotional Cards").
-  Set names are now matched case-insensitively, so those printings keep their release date.
+### UAT items
+- **UAT-1 (corrected): duplicate product names dropped release dates.**
+  - *Found:* during user acceptance testing of the expanded scope, the coverage audit showed
+    "Yu-Gi-Oh! 5D's Tag Force 5 Promotional Cards" as a product with no release date.
+  - *Cause:* the source lists the same product twice with different capitalization, and only
+    one entry is dated ("... promotional cards", 2010-10-26). Printings filed under the undated
+    spelling had no box year and couldn't count toward the scope.
+  - *Fix:* set names are matched case-insensitively, preferring the dated entry.
+  - *Verified:* the product now shows its 2010 date, and one card that had been missing was
+    recovered (4,435 → 4,436 cards).
 - **Audit in `data/meta.json`:** token counts and products with no release date.
 
 ### Known gaps (documented, not fixable from this source)
