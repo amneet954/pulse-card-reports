@@ -29,7 +29,8 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
   but not at that rarity), which is expected. Columns: Card name, Card rarity, Box name,
   Box year (+ Box set code if ticked). CSV exports the names as a JSON array.
 - **Per-card metrics aren't available while grouped:** Card type, Attribute, Card description
-  and Card set code are unticked, greyed out and tagged "N/A". The note under the switch says so.
+  and Card set code are unticked and greyed out. Hovering (or tapping) one shows a small tooltip:
+  "Not available in filter group mode". The note under the switch says so too.
 - **Toggling the switch clears the current report** (on or off), so a regular report and a
   grouped report never mix. Run again for the new report.
 

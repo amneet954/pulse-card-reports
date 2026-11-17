@@ -255,3 +255,13 @@ button.primary.attention { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px v
 .name-item { background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; font-size: 13px; white-space: nowrap; }
 .lock-tag.off { color: var(--muted); }
 .metric.off span:not(.lock-tag) { color: var(--muted); }
+
+/* Greyed-out metrics in filter group mode: hover (or tap) shows a small tooltip */
+.metric.off { position: relative; }
+.metric.off::after {
+  content: attr(data-tip); position: absolute; left: 8px; bottom: calc(100% - 2px); z-index: 5;
+  background: var(--ink); color: var(--panel); font-size: 12px; font-weight: 600; white-space: nowrap;
+  padding: 6px 10px; border-radius: 6px; box-shadow: 0 4px 12px var(--shadow);
+  opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .12s, transform .12s;
+}
+.metric.off:hover::after, .metric.off:focus::after, .metric.off:active::after { opacity: 1; transform: translateY(0); }

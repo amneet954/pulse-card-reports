@@ -125,7 +125,8 @@ Rules:
   strings (alphabetical) with the cards printed there at that rarity; a row may list only some of
   the cards. Columns: Card name, Card rarity, Box name, Box year (+ Box set code if ticked); CSV
   exports the names as a JSON array. **While grouped, per-card fields are not available:** Card
-  type, Attribute, Card description and Card set code are unticked and disabled ("N/A").
+  type, Attribute, Card description and Card set code are unticked and greyed out; hovering or
+  tapping one shows the tooltip "Not available in filter group mode".
   Toggling the switch on or off clears the current report.
 - Partial matches for the above: box sets that contain some of the selected cards (e.g. 3 of 4),
   showing how many match.

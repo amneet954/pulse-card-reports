@@ -342,8 +342,9 @@
         ms.map((m) => {
           const locked = state.together && TOGETHER_LOCKED.includes(m.key);
           const off = state.together && TOGETHER_UNAVAILABLE.includes(m.key);
-          const tag = locked ? `<span class="lock-tag">Locked</span>` : off ? `<span class="lock-tag off" title="Not available while grouping">N/A</span>` : "";
-          return `<label class="metric${locked || off ? " locked" : ""}${off ? " off" : ""}"><input type="checkbox" autocomplete="off" value="${m.key}"` +
+          const tag = locked ? `<span class="lock-tag">Locked</span>` : "";
+          const tip = off ? ` data-tip="Not available in filter group mode" title="Not available in filter group mode" tabindex="0"` : "";
+          return `<label class="metric${locked || off ? " locked" : ""}${off ? " off" : ""}"${tip}><input type="checkbox" autocomplete="off" value="${m.key}"` +
             `${state.metrics.includes(m.key) ? " checked" : ""}${locked || off ? " disabled" : ""}>` +
             `<span>${esc(m.label)}</span>${tag}</label>`;
         }).join("") + `</fieldset>`;
