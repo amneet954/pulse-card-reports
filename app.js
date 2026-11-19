@@ -57,6 +57,16 @@
       if (!bySet.has(set.id)) bySet.set(set.id, []);
       bySet.get(set.id).push(row);
     }
+    // Rarity spellings that differ only in capitalization (the source has "PLatinum Secret Rare"
+    // next to "Platinum Secret Rare") are shown with the most common spelling.
+    const counts = new Map();
+    for (const p of printings) if (p.rarity) counts.set(p.rarity, (counts.get(p.rarity) || 0) + 1);
+    const canon = new Map();
+    for (const [r, n] of counts) {
+      const k = r.toLowerCase();
+      if (!canon.has(k) || n > counts.get(canon.get(k))) canon.set(k, r);
+    }
+    for (const p of printings) if (p.rarity) p.rarity = canon.get(p.rarity.toLowerCase());
     return { cards, sets, cardById, setById, printings, byCard, bySet, scope: data.scope || null };
   }
 
@@ -93,8 +103,20 @@
   }
 
   // Every rarity in the catalog, for the rarity filter.
+  // Duplicates that differ only in capitalization (the source has "PLatinum Secret Rare" next to
+  // "Platinum Secret Rare") collapse into the most common spelling. Filtering is case-insensitive,
+  // so both spellings are still matched.
   function allRarities(index) {
-    return [...new Set(index.printings.map((p) => p.rarity).filter(Boolean))].sort();
+    if (index._rarities) return index._rarities;
+    const counts = new Map();
+    for (const p of index.printings) if (p.rarity) counts.set(p.rarity, (counts.get(p.rarity) || 0) + 1);
+    const best = new Map();
+    for (const [r, n] of counts) {
+      const k = r.toLowerCase();
+      if (!best.has(k) || n > best.get(k).n) best.set(k, { r, n });
+    }
+    index._rarities = [...best.values()].map((x) => x.r).sort();
+    return index._rarities;
   }
   // Match typed text to a catalog rarity: exact (any case), else a single prefix match.
   function matchRarity(index, text) {
@@ -105,6 +127,19 @@
     if (exact) return exact;
     const pre = all.filter((r) => norm(r).startsWith(q));
     return pre.length === 1 ? pre[0] : null;
+  }
+
+  // Type-ahead for the rarity filter: catalog rarities that match the typed text.
+  // "g" -> Ghost Rare, Gold Rare, Gold Secret Rare, Premium Gold Rare...
+  function suggestRarities(index, text, limit) {
+    const q = norm(text);
+    if (!q) return [];
+    return allRarities(index)
+      .map((r) => ({ r, s: score(q, norm(r)) }))
+      .filter((x) => x.s !== null && (q.length > 2 || x.s <= 2)) // 1-2 letters: word starts only
+      .sort((a, b) => a.s - b.s || a.r.length - b.r.length || a.r.localeCompare(b.r))
+      .slice(0, limit || MAX_SUGGESTIONS)
+      .map((x) => x.r);
   }
 
   // ---------- Metrics ----------
@@ -278,7 +313,7 @@
   }
 
   const core = { norm, score, buildIndex, suggest, resolve, splitList, METRICS, DEFAULT_METRICS,
-    collectPrintings, buildReport, groupedReport, reportView, orderedMetrics, TOGETHER_LOCKED, TOGETHER_UNAVAILABLE, sortRows, toCSV, sampleToData, allRarities, matchRarity };
+    collectPrintings, buildReport, groupedReport, reportView, orderedMetrics, TOGETHER_LOCKED, TOGETHER_UNAVAILABLE, sortRows, toCSV, sampleToData, allRarities, matchRarity, suggestRarities };
   if (typeof module !== "undefined" && module.exports) { module.exports = core; return; }
 
   // ---------- UI ----------
@@ -442,6 +477,42 @@
       ? `Card rarity ${r.op === "not" ? "is not" : "is"}: ${r.values.join(", ")}` : "";
   }
 
+  // Rarity type-ahead
+  state.raritySug = { options: [], active: -1 };
+  function closeRaritySuggestions() {
+    $("rarity-suggestions").hidden = true;
+    $("rarity-input").setAttribute("aria-expanded", "false");
+    state.raritySug = { options: [], active: -1 };
+  }
+  function renderRaritySuggestions() {
+    const { options, active } = state.raritySug;
+    const list = $("rarity-suggestions");
+    if (!options.length) { closeRaritySuggestions(); return; }
+    list.innerHTML = options.map((r, i) =>
+      `<li role="option" class="${i === active ? "active" : ""}" aria-selected="${i === active}" data-i="${i}"><span>${esc(r)}</span></li>`).join("");
+    list.hidden = false;
+    $("rarity-input").setAttribute("aria-expanded", "true");
+  }
+  async function updateRaritySuggestions() {
+    $("rarity-msg").hidden = true;
+    const text = $("rarity-input").value;
+    if (!norm(text)) { closeRaritySuggestions(); return; }
+    const index = await loadIndex();
+    const options = suggestRarities(index, text).filter((r) => !state.rarity.values.includes(r));
+    state.raritySug = { options, active: options.length ? 0 : -1 };
+    renderRaritySuggestions();
+  }
+  function chooseRarity(i) {
+    const r = state.raritySug.options[i];
+    if (!r) return;
+    if (!state.rarity.values.includes(r)) state.rarity.values.push(r);
+    $("rarity-input").value = "";
+    closeRaritySuggestions();
+    renderRarity();
+    renderChips();
+    $("rarity-input").focus();
+  }
+
   async function addRarity() {
     const input = $("rarity-input");
     const text = input.value.trim();
@@ -459,6 +530,7 @@
       return;
     }
     msg.hidden = true;
+    closeRaritySuggestions();
     if (!state.rarity.values.includes(found)) state.rarity.values.push(found);
     input.value = "";
     renderRarity();
@@ -758,9 +830,24 @@
   $("search-form").addEventListener("submit", run);
   $("together").addEventListener("click", () => setTogether(!state.together));
   $("rarity-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); addRarity(); }
+    const n = state.raritySug.options.length;
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && n) {
+      e.preventDefault();
+      state.raritySug.active = (state.raritySug.active + (e.key === "ArrowDown" ? 1 : -1) + n) % n;
+      renderRaritySuggestions();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (n && state.raritySug.active >= 0) chooseRarity(state.raritySug.active); else addRarity();
+    } else if (e.key === "Escape") {
+      closeRaritySuggestions();
+    }
   });
-  $("rarity-input").addEventListener("input", () => { $("rarity-msg").hidden = true; });
+  $("rarity-input").addEventListener("input", updateRaritySuggestions);
+  $("rarity-suggestions").addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (li) { e.preventDefault(); chooseRarity(Number(li.dataset.i)); }
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#rarity-combo")) closeRaritySuggestions(); });
   document.querySelectorAll(".opseg").forEach((b) => b.addEventListener("click", () => {
     state.rarity.op = b.dataset.op;
     renderRarity();

@@ -103,7 +103,9 @@ Rules:
   (Red-Eyes Black Dragon has 8 Common and 13 Ultra Rare printings), so narrowing by rarity is often
   the fastest way to the printing a customer asked for. **Built in v1.64 (hotfix), released in v1.65.** Typed text
   matches a catalog rarity exactly (any case) or by a unique prefix ("secret" → Secret Rare);
-  ambiguous text lists the options. The filter applies on Run (part of the rerun warning), stays
+  ambiguous text lists the options. **Type-ahead (v1.66 hotfix):** suggestions come from the
+  catalog's rarity names (YGOPRODeck printings data), e.g. "g" → Gold Rare, Ghost Rare, Gold Secret
+  Rare; rarity spellings that differ only in case are merged (UAT-2). The filter applies on Run (part of the rerun warning), stays
   applied when the Box set toggle is selected (shown as a note), and Clear all resets it.
 - Full, up-to-date catalog: every set and every card, including cards first released after
   Extreme Victory (the Xyz era onward, e.g. 2022 or 2026). Decide whether to include Skill Cards

@@ -34,6 +34,11 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 - **Toggling the switch clears the current report** (on or off), so a regular report and a
   grouped report never mix. Run again for the new report.
 
+- **Rarity type-ahead.** The Card rarity box now suggests rarities as you type, from the
+  rarity names in the YGOPRODeck printings data (40 in the catalog): "g" suggests Gold Rare,
+  Ghost Rare, Ghost/Gold Rare, Gold Secret Rare and Premium Gold Rare. Tap a suggestion or use the
+  arrow keys and Enter. One or two letters match the start of a word only.
+
 ### UAT items
 - **UAT-1 (corrected): duplicate product names dropped release dates.**
   - *Found:* during user acceptance testing of the expanded scope, the coverage audit showed
@@ -44,6 +49,13 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
   - *Fix:* set names are matched case-insensitively, preferring the dated entry.
   - *Verified:* the product now shows its 2010 date, and one card that had been missing was
     recovered (4,435 → 4,436 cards).
+- **UAT-2 (corrected): a rarity spelled two ways.**
+  - *Found:* while testing rarity type-ahead, "sec" suggested both "Platinum Secret Rare" and
+    "PLatinum Secret Rare".
+  - *Cause:* a capitalization typo in the source data on some printings.
+  - *Fix:* rarity spellings that differ only in capitalization now use the most common spelling
+    everywhere: suggestions, reports and CSV.
+  - *Verified:* 40 distinct rarities (was 41); a "Platinum Secret Rare" report shows one spelling.
 - **Audit in `data/meta.json`:** token counts and products with no release date.
 
 ### Known gaps (documented, not fixable from this source)

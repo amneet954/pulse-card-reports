@@ -66,8 +66,12 @@
                 <button type="button" class="opseg active" role="radio" aria-checked="true" data-op="is">is</button>
                 <button type="button" class="opseg" role="radio" aria-checked="false" data-op="not">is not</button>
               </div>
-              <input id="rarity-input" type="text" autocomplete="off" spellcheck="false"
-                aria-labelledby="rarity-label" placeholder="Type a rarity, e.g. common, and press Enter">
+              <div class="combo" id="rarity-combo">
+                <input id="rarity-input" type="text" autocomplete="off" spellcheck="false" role="combobox"
+                  aria-autocomplete="list" aria-expanded="false" aria-controls="rarity-suggestions"
+                  aria-labelledby="rarity-label" placeholder="Start typing a rarity, e.g. gold">
+                <ul id="rarity-suggestions" class="suggestions" role="listbox" hidden></ul>
+              </div>
             </div>
             <p class="hint warn" id="rarity-msg" role="status" hidden></p>
             <div class="chips" id="rarity-chips" aria-label="Rarity filter values"></div>

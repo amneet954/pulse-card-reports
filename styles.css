@@ -229,7 +229,8 @@ button.primary.attention { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px v
 
 .rarity-filter { margin-top: 14px; }
 .rarity-row { display: flex; gap: 10px; align-items: stretch; }
-.rarity-row input { flex: 1; min-width: 0; }
+.rarity-row .combo { flex: 1; min-width: 0; }
+.rarity-row input { width: 100%; }
 .hint.warn { color: var(--warn-ink); background: var(--warn-bg); border-radius: 8px; padding: 6px 10px; }
 @media (max-width: 640px) { .rarity-row { flex-direction: column; } .rarity-row .toggle { align-self: flex-start; } }
 
