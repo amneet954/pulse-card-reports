@@ -41,6 +41,9 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 
 - **Try an example switches the filter toggle to Box set**, since the example filters by the
   box set Quarter Century Stampede.
+- **Removed Copy CSV.** The report now has a single Export CSV button. Copy CSV did the same
+  job as Export CSV (same columns and rows, copied to the clipboard instead of downloaded), so it
+  was redundant.
 - **Footer coverage note shows the full date range.** It now reads "from Legend of Blue Eyes
   White Dragon (March 8, 2002) up to and including Extreme Victory (May 6, 2011)", so the start
   of the range is explicit. Removed the "Card data from the YGOPRODeck API, refreshed weekly"

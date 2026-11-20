@@ -761,15 +761,6 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
-  async function copyCSV() {
-    if (!state.report) return;
-    const btn = $("copy-csv");
-    const view = currentView();
-    try { await navigator.clipboard.writeText(toCSV(view, sortedRows(view))); btn.textContent = "Copied"; }
-    catch (err) { btn.textContent = "Copy failed"; }
-    setTimeout(() => (btn.textContent = "Copy CSV"), 1500);
-  }
-
   // --- wiring ---
   $("version").textContent = "v" + DISPLAY_VERSION;
   renderMetrics();
@@ -876,6 +867,5 @@
     render();
   });
   $("truncated").addEventListener("click", (e) => { if (e.target.id === "export-more") downloadCSV(); });
-  $("copy-csv").addEventListener("click", copyCSV);
   loadIndex();
 })();

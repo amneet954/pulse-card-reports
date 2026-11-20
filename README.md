@@ -44,7 +44,7 @@ search.
 | Work with the table | Sort any column up or down. By design, the screen shows at most 50 rows; the CSV export has them all |
 | MVP report and Try an example | The core report uses six metrics: card name, card type, rarity, set code, box name and box year. Try an example runs it for Quarter Century Stampede |
 | Fast, usable on a tablet | Reports build in milliseconds from bundled data; 44px touch targets |
-| View on screen and export to CSV | Export CSV and Copy CSV, with the same columns as the screen |
+| View on screen and export to CSV | Export CSV, with the same columns and sort order as the screen (every row) |
 
 ## What it deliberately doesn't do (Won't have, this time)
 
