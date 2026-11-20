@@ -820,6 +820,9 @@
   // Try an example: the MVP report (six metrics) for Quarter Century Stampede.
   $("example").addEventListener("click", async () => {
     const index = await loadIndex();
+    // The example filters by a box set, so the toggle switches to Box set first (which also
+    // starts fresh, like any toggle switch).
+    if (state.kind !== "set") setKind("set");
     state.items = [];
     state.together = false;
     state.rarity = { op: "is", values: [] };

@@ -134,7 +134,7 @@ Rules:
   showing how many match.
 - "Try an example" button, to help new users get started (built in v1.64: runs the MVP report —
   Card name, Card type, Card rarity, Card set code, Box name, Box year — filtered to Quarter
-  Century Stampede)
+  Century Stampede; it switches the filter toggle to Box set first)
 
 ## Won't have (this time)
 - 1st Edition vs. Unlimited, and telling reprints apart
