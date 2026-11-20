@@ -96,7 +96,8 @@ Rules:
 9. **View results on screen and export to CSV** (same columns and sort order as the screen; CSV has every row).
 
 ## Should have
-- **Card rarity filter** in the Filter section, shown when the Card toggle is selected. It reads
+- **Card rarity filter** in the Filter section. It appears whenever the **Card rarity metric is
+  ticked**, in Card or Box set mode, and disappears (clearing its values) when it's unticked. It reads
   "Card rarity **is** / **is not**": type a rarity (not case-sensitive), press Enter, and it becomes
   a chip; add as many as needed (e.g. Common, Ultra Rare). "Is" keeps only those rarities; "is not"
   excludes them. Why: one card can have many rarities, and many printings within each rarity
@@ -105,8 +106,8 @@ Rules:
   matches a catalog rarity exactly (any case) or by a unique prefix ("secret" → Secret Rare);
   ambiguous text lists the options. **Type-ahead (v1.66 hotfix):** suggestions come from the
   catalog's rarity names (YGOPRODeck printings data), e.g. "g" → Gold Rare, Ghost Rare, Gold Secret
-  Rare; rarity spellings that differ only in case are merged (UAT-2). The filter applies on Run (part of the rerun warning), stays
-  applied when the Box set toggle is selected (shown as a note), and Clear all resets it.
+  Rare; rarity spellings that differ only in case are merged (UAT-2). The filter applies on Run (part of the rerun warning), and Clear
+  all resets it.
 - Full, up-to-date catalog: every set and every card, including cards first released after
   Extreme Victory (the Xyz era onward, e.g. 2022 or 2026). Decide whether to include Skill Cards
   (Speed Duel). Tokens are already in scope.

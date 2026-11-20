@@ -401,7 +401,13 @@
     // keep sidebar order; locked metrics always stay ticked while the together filter is on
     if (state.together) keys = keys.concat(TOGETHER_LOCKED).filter((k) => !TOGETHER_UNAVAILABLE.includes(k));
     state.metrics = METRICS.map((m) => m.key).filter((k) => keys.includes(k));
+    if (!state.metrics.includes("rarity") && state.rarity.values.length) {
+      state.rarity = { op: "is", values: [] };
+      $("rarity-input").value = "";
+      $("rarity-msg").hidden = true;
+    }
     renderMetrics();
+    renderRarity();
     if (state.report) {
       if (state.sort.key && !state.metrics.includes(state.sort.key)) state.sort = { key: null, dir: null };
       render(); // removed metrics disappear; new ones show "--" until the report runs again
@@ -460,10 +466,12 @@
   // --- card rarity filter (Should have) ---
   // "Card rarity is / is not" + typed values as chips. Shown with the Card toggle; values stay
   // applied (and listed) when the Box set toggle is selected.
+  // The Card rarity filter appears whenever the Card rarity metric is ticked, in Card or Box set
+  // mode. Unticking the metric removes the filter and its values.
   function renderRarity() {
-    const card = state.kind === "card";
+    const shown = state.metrics.includes("rarity");
     const r = state.rarity;
-    $("rarity-filter").hidden = !card;
+    $("rarity-filter").hidden = !shown;
     document.querySelectorAll(".opseg").forEach((b) => {
       const on = b.dataset.op === r.op;
       b.classList.toggle("active", on);
@@ -472,10 +480,7 @@
     $("rarity-chips").innerHTML = r.values.map((v, i) =>
       `<span class="chip"><span class="chip-kind">${r.op === "not" ? "Not" : "Rarity"}</span>${esc(v)}` +
       `<button type="button" class="chip-x" data-i="${i}" aria-label="Remove ${esc(v)}">×</button></span>`).join("");
-    const note = $("rarity-note");
-    note.hidden = card || !r.values.length;
-    note.textContent = r.values.length
-      ? `Card rarity ${r.op === "not" ? "is not" : "is"}: ${r.values.join(", ")}` : "";
+    $("rarity-note").hidden = true;
   }
 
   // Rarity type-ahead
