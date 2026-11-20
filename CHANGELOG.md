@@ -41,6 +41,10 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
 
 - **Try an example switches the filter toggle to Box set**, since the example filters by the
   box set Quarter Century Stampede.
+- **Footer coverage note shows the full date range.** It now reads "from Legend of Blue Eyes
+  White Dragon (March 8, 2002) up to and including Extreme Victory (May 6, 2011)", so the start
+  of the range is explicit. Removed the "Card data from the YGOPRODeck API, refreshed weekly"
+  line from the UI; the data source is still documented in the README and CLAUDE.md.
 - **The Card rarity filter follows the Card rarity metric.** It now appears whenever Card rarity
   is ticked in the Metrics panel, in **Card or Box set** mode (before, it showed only in Card
   mode). Unticking the metric hides the filter and clears its values. Example: Box set mode,
