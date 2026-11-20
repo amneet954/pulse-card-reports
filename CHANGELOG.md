@@ -49,8 +49,8 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
   is ticked in the Metrics panel, in **Card or Box set** mode (before, it showed only in Card
   mode). Unticking the metric hides the filter and clears its values. Example: Box set mode,
   Magician's Force, Card rarity ticked, "is Secret Rare" gives 2 rows.
-- **Display version.** The version badge in the app header now shows **v1.3** for
-  presentations (briefly v1.4). Internally the release stays **v1.66** (this changelog, commit messages).
+- **Display version.** The version badge in the app header now shows **v1.4** for
+  presentations (briefly v1.4, then v1.3, now back to v1.4). Internally the release stays **v1.66** (this changelog, commit messages).
 
 ### UAT items
 - **UAT-1 (corrected): duplicate product names dropped release dates.**
