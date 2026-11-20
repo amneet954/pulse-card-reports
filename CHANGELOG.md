@@ -39,8 +39,8 @@ Every release of Pulse Card Reports, newest first. Each entry says what changed,
   Ghost Rare, Ghost/Gold Rare, Gold Secret Rare and Premium Gold Rare. Tap a suggestion or use the
   arrow keys and Enter. One or two letters match the start of a word only.
 
-- **Display version.** The version badge in the app header now shows **v1.4** for
-  presentations. Internally the release stays **v1.66** (this changelog, commit messages).
+- **Display version.** The version badge in the app header now shows **v1.3** for
+  presentations (briefly v1.4). Internally the release stays **v1.66** (this changelog, commit messages).
 
 ### UAT items
 - **UAT-1 (corrected): duplicate product names dropped release dates.**

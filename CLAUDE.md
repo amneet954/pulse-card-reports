@@ -149,7 +149,7 @@ Rules:
   for every release. **The product owner sets version numbers:** stay on the current version
   (v1.66) and record changes as hotfixes under it until told to move to the next one.
 - Commit messages explain what changed and why, in the same terms as the changelog.
-- **Display version:** the UI badge shows `DISPLAY_VERSION` in `app.js` (currently **v1.4**) for
+- **Display version:** the UI badge shows `DISPLAY_VERSION` in `app.js` (currently **v1.3**) for
   presentations, while `VERSION` (internal, e.g. 1.66) is used in the changelog and commits. Change
   the display version only when the product owner asks.
 
