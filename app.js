@@ -9,7 +9,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.66";
+  const VERSION = "1.66";        // internal release number (CHANGELOG, commits)
+  const DISPLAY_VERSION = "1.4";  // what the UI badge shows, for presentations
   const MAX_ITEMS = 20;
   const MAX_SUGGESTIONS = 8;
   const MAX_ROWS_SHOWN = 50; // the screen shows a preview; CSV export always includes every row
@@ -765,7 +766,7 @@
   }
 
   // --- wiring ---
-  $("version").textContent = "v" + VERSION;
+  $("version").textContent = "v" + DISPLAY_VERSION;
   renderMetrics();
   $("metric-groups").addEventListener("submit", (e) => e.preventDefault());
   $("metric-groups").addEventListener("change", (e) => {
